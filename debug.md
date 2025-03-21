@@ -1,4 +1,4 @@
-Here are **anti-debugging/anti-tampering techniques** for Lua (common in game hacks or sensitive scripts). Use these with caution, as they may trigger false positives or break in certain environments:
+Here are **anti-debugging/anti-tampering techniques** for Lua. Use these with caution, as they may trigger false positives or break in certain environments:
 
 ---
 
@@ -104,4 +104,4 @@ secret = string.rep("\0", #secret) -- Fill with null bytes
 - Combine multiple checks and **obfuscate them** (e.g., with `Swizzle` or `Enc Func Dec`).
 - For enterprise apps, use tools like **LuaCipher** or **IronLua** for bytecode encryption.
 
-Need help implementing these in your code? Let me know! 🔒
+Need help implementing these in your code? Contact me. 🔒
