@@ -1,4 +1,4 @@
-local gamesListURL = "https://raw.githubusercontent.com/X7N6Y/X7N6Y/refs/heads/main/List.lua"
+local gamesListURL = "https://raw.githubusercontent.com/cookieys/cookieys-hub/refs/heads/main/Game%20list.lua"
 
 local success, Games = pcall(function()
     return loadstring(game:HttpGet(gamesListURL))()
