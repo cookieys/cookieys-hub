@@ -1,1 +1,6 @@
-local a="https://raw.githubusercontent.com/cookieys/cookieys-hub/refs/heads/main/Game%20list.lua"local b,c=pcall(function()return loadstring(game:HttpGet(a))()end)if b and c then local d=game.PlaceId;if c[d]then local e,f=pcall(function()return loadstring(game:HttpGet(c[d]))()end)if not e then print("Error loading game script:",f)end end else game.Players.LocalPlayer:Kick("Error loading games list.")end
+--[[
+
+discord.gg/25ms
+
+--]]
+local s="https://raw.githubusercontent.com/cookieys/cookieys-hub/refs/heads/main/Game%20list.lua"local U,D=pcall(function()return(loadstring(game:HttpGet(s)))()end)if U and D then local s=game.PlaceId if D[s]then local U,v=pcall(function()return(loadstring(game:HttpGet(D[s])))()end)if not U then print("Error loading game script:",v)game.Players.LocalPlayer:Kick("Error loading game script.")end else print("Game not supported. Kicking player.")game.Players.LocalPlayer:Kick("This game is not supported by the script.")end else print("Error loading games list:",D)end
