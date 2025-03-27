@@ -1,4 +1,75 @@
-local a=loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()local b=a:CreateWindow({Title="Cookieys hub",Icon="door-open",Author="XyraV",Folder="XyraV",Size=UDim2.fromOffset(480,360),Transparent=true,Theme="Dark",SideBarWidth=200,HasOutline=false})b:EditOpenButton({Title="Open Example UI",Icon="monitor",CornerRadius=UDim.new(0,10),StrokeThickness=2,Color=ColorSequence.new(Color3.fromHex("FF0F7B"),Color3.fromHex("F89B29")),Draggable=true})local c={ButtonTab=b:Tab({Title="Button",Icon="mouse-pointer-2",Desc="Contains interactive buttons for various actions."}),CodeTab=b:Tab({Title="Code",Icon="code",Desc="Displays and manages code snippets."}),ColorPickerTab=b:Tab({Title="ColorPicker",Icon="paintbrush",Desc="Choose and customize colors easily."}),NotificationTab=b:Tab({Title="Notification",Icon="bell",Desc="Configure and view notifications."}),ToggleTab=b:Tab({Title="Toggle",Icon="toggle-left",Desc="Switch settings on and off."}),SliderTab=b:Tab({Title="Slider",Icon="sliders-horizontal",Desc="Adjust values smoothly with sliders."}),InputTab=b:Tab({Title="Input",Icon="keyboard",Desc="Accept text and numerical input."}),DropdownTab=b:Tab({Title="Dropdown",Icon="chevrons-up-down",Desc="Select from multiple options."}),b=b:Divider(),WindowTab=b:Tab({Title="Window and File Configuration",Icon="settings",Desc="Manage window settings and file configurations."}),CreateThemeTab=b:Tab({Title="Create Theme",Icon="palette",Desc="Design and apply custom themes."}),be=b:Divider(),LongTab=b:Tab({Title="Long and empty tab. Looong and empty.. tab.",Icon="frown",Desc="Long Description"})}b:SelectTab(1)c.ButtonTab:Button({Title="Click Me",Desc="This is a simple button",Callback=function()print("Button Clicked!")end})c.ButtonTab:Button({Title="Locked Button",Desc="This button is locked",Locked=true})c.ButtonTab:Button({Title="Submit",Desc="Click to submit",Callback=function()print("Submitted!")end,Locked=false})c.CodeTab:Code({Title="Example Code",Code=[[
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Cookieys hub",
+    Icon = "door-open",
+    Author = "XyraV",
+    Folder = "XyraV",
+    Size = UDim2.fromOffset(480, 360), -- Made smaller
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    --Background = "rbxassetid://13511292247", -- rbxassetid only
+    HasOutline = false,
+    -- Key system removed
+})
+
+
+Window:EditOpenButton({
+    Title = "Open Example UI",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0,10),
+    StrokeThickness = 2,
+    Color = ColorSequence.new( -- gradient
+        Color3.fromHex("FF0F7B"),
+        Color3.fromHex("F89B29")
+    ),
+    --Enabled = false,
+    Draggable = true,
+})
+
+
+local Tabs = {
+    ButtonTab = Window:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." }),
+    CodeTab = Window:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." }),
+    ColorPickerTab = Window:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." }),
+    NotificationTab = Window:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." }),
+    ToggleTab = Window:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." }),
+    SliderTab = Window:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." }),
+    InputTab = Window:Tab({ Title = "Input", Icon = "keyboard", Desc = "Accept text and numerical input." }),
+    DropdownTab = Window:Tab({ Title = "Dropdown", Icon = "chevrons-up-down", Desc = "Select from multiple options." }),
+    b = Window:Divider(),
+    WindowTab = Window:Tab({ Title = "Window and File Configuration", Icon = "settings", Desc = "Manage window settings and file configurations." }),
+    CreateThemeTab = Window:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." }),
+    be = Window:Divider(),
+    LongTab = Window:Tab({ Title = "Long and empty tab. Looong and empty.. tab.", Icon = "frown", Desc = "Long Description" }),
+}
+
+Window:SelectTab(1)
+
+Tabs.ButtonTab:Button({
+    Title = "Click Me",
+    Desc = "This is a simple button",
+    Callback = function() print("Button Clicked!") end
+})
+
+Tabs.ButtonTab:Button({
+    Title = "Locked Button",
+    Desc = "This button is locked",
+    Locked = true,
+})
+
+Tabs.ButtonTab:Button({
+    Title = "Submit",
+    Desc = "Click to submit",
+    Callback = function() print("Submitted!") end,
+    Locked = false
+})
+
+
+Tabs.CodeTab:Code({
+    Title = "Example Code",
+    Code = [[
 
 local message = "Hello"
 print(message)
@@ -6,7 +77,12 @@ print(message)
 if message == "Hello" then
     print("Greetings!")
 end
-    ]]})c.CodeTab:Code({Title="Another Code Example",Code=[[
+    ]],
+})
+
+Tabs.CodeTab:Code({
+    Title = "Another Code Example",
+    Code = [[
 local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
 
 local Window = WindUI:CreateWindow({
@@ -16,4 +92,301 @@ local Window = WindUI:CreateWindow({
     Folder = "CloudHub",
     Size = UDim2.fromOffset(580, 460),
 })
-    ]]})c.ColorPickerTab:Colorpicker({Title="Pick a Color",Default=Color3.fromRGB(255,0,0),Callback=function(d)print("Selected color: "..tostring(d))end})c.ColorPickerTab:Colorpicker({Title="Background Color",Default=Color3.fromRGB(0,0,255),Callback=function(d)print("Background color: "..tostring(d))end})c.NotificationTab:Button({Title="Click to get Notified",Callback=function()a:Notify({Title="Notification Example",Content="Content",Icon="droplet-off",Duration=5})end})c.ToggleTab:Toggle({Title="Enable Feature",Default=true,Callback=function(e)print("Feature enabled: "..tostring(e))end})c.ToggleTab:Toggle({Title="Activate Mode",Default=false,Callback=function(e)print("Mode activated: "..tostring(e))end})c.ToggleTab:Toggle({Title="Toggle with icon",Icon="check",Default=false,Callback=function(e)print("Toggle with icon activated: "..tostring(e))end})c.SliderTab:Slider({Title="Volume Slider",Value={Min=0,Max=100,Default=50},Callback=function(f)print("Volume set to: "..f)end})c.SliderTab:Slider({Title="Brightness Slider",Value={Min=1,Max=100,Default=75},Callback=function(f)print("Brightness set to: "..f)end})c.InputTab:Input({Title="Username",Default="Guest",Placeholder="Enter your username",Callback=function(g)print("Username: "..g)end})c.InputTab:Input({Title="Password",Default="",Placeholder="Enter your password",Callback=function(g)print("Password entered.")end})c.DropdownTab:Dropdown({Title="Select an Option",Values={"Option 1","Option 2","Option 3"},Value="Option 1",Callback=function(h)print("Selected: "..h)end})c.DropdownTab:Dropdown({Title="Choose a Category",Values={"Category A","Category B","Category C"},Value="Category A",Callback=function(h)print("Category selected: "..h)end})local i=game:GetService("HttpService")local j="WindUI"makefolder(j)local function k(l,m)local n=j.."/"..l..".json"local o=i:JSONEncode(m)writefile(n,o)end;local function p(l)local n=j.."/"..l..".json"if isfile(n)then local o=readfile(n)return i:JSONDecode(o)end end;local function q()local r={}for s,t in ipairs(listfiles(j))do local l=t:match("([^/]+)%.json$")if l then table.insert(r,l)end end;return r end;c.WindowTab:Section({Title="Window"})local u={}for v,s in pairs(a:GetThemes())do table.insert(u,v)end;local w=c.WindowTab:Dropdown({Title="Select Theme",Multi=false,AllowNone=false,Value=nil,Values=u,Callback=function(x)a:SetTheme(x)end})w:Select(a:GetCurrentTheme())local y=c.WindowTab:Toggle({Title="Toggle Window Transparency",Callback=function(z)b:ToggleTransparency(z)end,Value=a:GetTransparency()})c.WindowTab:Section({Title="Save"})local A=""c.WindowTab:Input({Title="Write File Name",PlaceholderText="Enter file name",Callback=function(B)A=B end})c.WindowTab:Button({Title="Save File",Callback=function()if A~=""then k(A,{Transparent=a:GetTransparency(),Theme=a:GetCurrentTheme()})end end})c.WindowTab:Section({Title="Load"})local C;local r=q()C=c.WindowTab:Dropdown({Title="Select File",Multi=false,AllowNone=true,Values=r,Callback=function(D)A=D end})c.WindowTab:Button({Title="Load File",Callback=function()if A~=""then local m=p(A)if m then a:Notify({Title="File Loaded",Content="Loaded data: "..i:JSONEncode(m),Duration=5})if m.Transparent then b:ToggleTransparency(m.Transparent)y:SetValue(m.Transparent)end;if m.Theme then a:SetTheme(m.Theme)end end end end})c.WindowTab:Button({Title="Overwrite File",Callback=function()if A~=""then k(A,{Transparent=a:GetTransparency(),Theme=a:GetCurrentTheme()})end end})c.WindowTab:Button({Title="Refresh List",Callback=function()C:Refresh(q())end})local E=a:GetCurrentTheme()local F=a:GetThemes()local G=F[E].Accent;local H=F[E].Outline;local I=F[E].Text;local J=F[E].PlaceholderText;function updateTheme()a:AddTheme({Name=E,Accent=G,Outline=H,Text=I,PlaceholderText=J})a:SetTheme(E)end;local K=c.CreateThemeTab:Input({Title="Theme Name",Value=E,Callback=function(v)E=v end})c.CreateThemeTab:Colorpicker({Title="Background Color",Default=Color3.fromHex(G),Callback=function(d)G=d:ToHex()end})c.CreateThemeTab:Colorpicker({Title="Outline Color",Default=Color3.fromHex(H),Callback=function(d)H=d:ToHex()end})c.CreateThemeTab:Colorpicker({Title="Text Color",Default=Color3.fromHex(I),Callback=function(d)I=d:ToHex()end})c.CreateThemeTab:Colorpicker({Title="Placeholder Text Color",Default=Color3.fromHex(J),Callback=function(d)J=d:ToHex()end})c.CreateThemeTab:Button({Title="Update Theme",Callback=function()updateTheme()end})
+    ]],
+})
+
+
+Tabs.ColorPickerTab:Colorpicker({
+    Title = "Pick a Color",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color) print("Selected color: " .. tostring(color)) end
+})
+
+Tabs.ColorPickerTab:Colorpicker({
+    Title = "Background Color",
+    Default = Color3.fromRGB(0, 0, 255),
+    Callback = function(color) print("Background color: " .. tostring(color)) end
+})
+
+
+Tabs.NotificationTab:Button({
+    Title = "Click to get Notified",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Notification Example",
+            Content = "Content",
+            Icon = "droplet-off",
+            Duration = 5,
+        })
+    end
+})
+
+
+Tabs.ToggleTab:Toggle({
+    Title = "Enable Feature",
+    Default = true,
+    Callback = function(state) print("Feature enabled: " .. tostring(state)) end
+})
+
+Tabs.ToggleTab:Toggle({
+    Title = "Activate Mode",
+    Default = false,
+    Callback = function(state) print("Mode activated: " .. tostring(state)) end
+})
+Tabs.ToggleTab:Toggle({
+    Title = "Toggle with icon",
+    Icon = "check",
+    Default = false,
+    Callback = function(state) print("Toggle with icon activated: " .. tostring(state)) end
+})
+
+
+Tabs.SliderTab:Slider({
+    Title = "Volume Slider",
+    Value = {
+        Min = 0,
+        Max = 100,
+        Default = 50,
+    },
+    Callback = function(value) print("Volume set to: " .. value) end
+})
+
+Tabs.SliderTab:Slider({
+    Title = "Brightness Slider",
+    Value = {
+        Min = 1,
+        Max = 100,
+        Default = 75,
+    },
+    Callback = function(value) print("Brightness set to: " .. value) end
+})
+
+
+Tabs.InputTab:Input({
+    Title = "Username",
+    Default = "Guest",
+    Placeholder = "Enter your username",
+    Callback = function(input) print("Username: " .. input) end
+})
+
+Tabs.InputTab:Input({
+    Title = "Password",
+    Default = "",
+    Placeholder = "Enter your password",
+    Callback = function(input) print("Password entered.") end
+})
+
+
+Tabs.DropdownTab:Dropdown({
+    Title = "Select an Option",
+    Values = { "Option 1", "Option 2", "Option 3" },
+    Value = "Option 1",
+    Callback = function(option) print("Selected: " .. option) end
+})
+
+Tabs.DropdownTab:Dropdown({
+    Title = "Choose a Category",
+    Values = { "Category A", "Category B", "Category C" },
+    Value = "Category A",
+    Callback = function(option) print("Category selected: " .. option) end
+})
+
+
+
+-- Configuration
+
+
+local HttpService = game:GetService("HttpService")
+
+local folderPath = "WindUI"
+makefolder(folderPath)
+
+local function SaveFile(fileName, data)
+    local filePath = folderPath .. "/" .. fileName .. ".json"
+    local jsonData = HttpService:JSONEncode(data)
+    writefile(filePath, jsonData)
+end
+
+local function LoadFile(fileName)
+    local filePath = folderPath .. "/" .. fileName .. ".json"
+    if isfile(filePath) then
+        local jsonData = readfile(filePath)
+        return HttpService:JSONDecode(jsonData)
+    end
+end
+
+local function ListFiles()
+    local files = {}
+    for _, file in ipairs(listfiles(folderPath)) do
+        local fileName = file:match("([^/]+)%.json$")
+        if fileName then
+            table.insert(files, fileName)
+        end
+    end
+    return files
+end
+
+Tabs.WindowTab:Section({ Title = "Window" })
+
+local themeValues = {}
+for name, _ in pairs(WindUI:GetThemes()) do
+    table.insert(themeValues, name)
+end
+
+local themeDropdown = Tabs.WindowTab:Dropdown({
+    Title = "Select Theme",
+    Multi = false,
+    AllowNone = false,
+    Value = nil,
+    Values = themeValues,
+    Callback = function(theme)
+        WindUI:SetTheme(theme)
+    end
+})
+themeDropdown:Select(WindUI:GetCurrentTheme())
+
+local ToggleTransparency = Tabs.WindowTab:Toggle({
+    Title = "Toggle Window Transparency",
+    Callback = function(e)
+        Window:ToggleTransparency(e)
+    end,
+    Value = WindUI:GetTransparency()
+})
+
+Tabs.WindowTab:Section({ Title = "Save" })
+
+local fileNameInput = ""
+Tabs.WindowTab:Input({
+    Title = "Write File Name",
+    PlaceholderText = "Enter file name",
+    Callback = function(text)
+        fileNameInput = text
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Save File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        end
+    end
+})
+
+Tabs.WindowTab:Section({ Title = "Load" })
+
+local filesDropdown
+local files = ListFiles()
+
+filesDropdown = Tabs.WindowTab:Dropdown({
+    Title = "Select File",
+    Multi = false,
+    AllowNone = true,
+    Values = files,
+    Callback = function(selectedFile)
+        fileNameInput = selectedFile
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Load File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            local data = LoadFile(fileNameInput)
+            if data then
+                WindUI:Notify({
+                    Title = "File Loaded",
+                    Content = "Loaded data: " .. HttpService:JSONEncode(data),
+                    Duration = 5,
+                })
+                if data.Transparent then
+                    Window:ToggleTransparency(data.Transparent)
+                    ToggleTransparency:SetValue(data.Transparent)
+                end
+                if data.Theme then WindUI:SetTheme(data.Theme) end
+            end
+        end
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Overwrite File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        end
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Refresh List",
+    Callback = function()
+        filesDropdown:Refresh(ListFiles())
+    end
+})
+
+local currentThemeName = WindUI:GetCurrentTheme()
+local themes = WindUI:GetThemes()
+
+local ThemeAccent = themes[currentThemeName].Accent
+local ThemeOutline = themes[currentThemeName].Outline
+local ThemeText = themes[currentThemeName].Text
+local ThemePlaceholderText = themes[currentThemeName].PlaceholderText
+
+function updateTheme()
+    WindUI:AddTheme({
+        Name = currentThemeName,
+        Accent = ThemeAccent,
+        Outline = ThemeOutline,
+        Text = ThemeText,
+        PlaceholderText = ThemePlaceholderText
+    })
+    WindUI:SetTheme(currentThemeName)
+end
+
+local CreateInput = Tabs.CreateThemeTab:Input({
+    Title = "Theme Name",
+    Value = currentThemeName,
+    Callback = function(name)
+        currentThemeName = name
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Background Color",
+    Default = Color3.fromHex(ThemeAccent),
+    Callback = function(color)
+        ThemeAccent = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Outline Color",
+    Default = Color3.fromHex(ThemeOutline),
+    Callback = function(color)
+        ThemeOutline = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Text Color",
+    Default = Color3.fromHex(ThemeText),
+    Callback = function(color)
+        ThemeText = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Placeholder Text Color",
+    Default = Color3.fromHex(ThemePlaceholderText),
+    Callback = function(color)
+        ThemePlaceholderText = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Button({
+    Title = "Update Theme",
+    Callback = function()
+        updateTheme()
+    end
+})
