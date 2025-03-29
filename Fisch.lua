@@ -1,1 +1,402 @@
-local a={}local b=game:GetService("VirtualInputManager")local c={}local d={AutoShake=false,AutoMinigame=false,AutoMinigameBlatant=false,AutoCast=false,PerfectCast=false,WebhookURL="",WebhookNotifications=false,FloatOnWater=false,Lock=false,MegaladonHunting=false,Priorities={},PriorityWebhook=false,AutoMap=false,AutoTotem=false}local e={AutoMinigameDownPerUp=2,AutoMinigameDownPerUpInternal=AutoMinigameDownPerUp,Timer=301,FloatPart=nil,LockedPosition=nil,MegaladonPosition=nil,Megaladon=false,MegHuntPlat=nil,MegHuntPos=nil,RodToBeEquipped="",FishHunted="",Pr=0}local f={}local g={}local h={}local i={}local j=loadstring(game:HttpGet("https://you.whimper.xyz/sources/ronix/ui.lua"))()local k=j.Notification()j:Theme("dark")for l,m in pairs(d)do if m==false then g[l]=function(n)d[l]=n end end end;function g.Initialize()local o=j:AddWindow("cookieys hub","0.1")local p=o:AddTab("Fishing","earth")local q=o:AddTab("Player","earth")local r=o:AddTab("FUN","earth")local s=o:AddTab("Interactions","list")local t=o:AddTab("Area Teleports","earth")local u=o:AddTab("Shop","earth")local v=o:AddTab("Priority List","earth")local w=o:AddTab("Webhook","list")local x=o:AddTab('Settings','earth')local y=p:AddSection("Mechanics","left")local z=p:AddSection("Fish AutoFarm","left")local A=p:AddSection("Fish AutoFarm Settings","left")local B=p:AddSection("Convenience","left")local C=p:AddSection("Credits","right")local D=t:AddSection("Teleports","left")local E=t:AddSection("Treasure","right")local F=s:AddSection("Actions","left")local G=w:AddSection("Webhook","left")local H=u:AddSection("Shop All","left")local I=p:AddSection("Seller","left")local J=t:AddSection("Totems","left")local K=t:AddSection('World Events',"right")local L=r:AddSection('FUN',"right")local M=q:AddSection("Player Modify","left")local N=q:AddSection("Misc Player","right")local O=x:AddSection("Settings","right")I:AddButton("Sell All",i.Sell)B:AddToggle("Float On Water",false,g.FloatOnWater)B:AddLabel("Turn ON to walk around and choose spot.")B:AddToggle("Auto Totem Use",false,g.AutoTotem)B:AddToggle("Auto TP To Treasure Map",false,g.AutoMap)E:AddToggle("Teleport to Jack Marrow",false,function()local Player=game.Players.LocalPlayer;local HumanoidRootPart=Player.Character:WaitForChild("HumanoidRootPart")HumanoidRootPart.CFrame=CFrame.new(-2824.359,214.311,1518.130)end)local P=Workspace:FindFirstChild("world"):WaitForChild("npcs")function rememberPosition()spawn(function()local Q=HumanoidRootPart.CFrame;local R=Instance.new("BodyVelocity")R.Velocity=Vector3.new(0,0,0)R.MaxForce=Vector3.new(math.huge,math.huge,math.huge)R.Parent=HumanoidRootPart;local S=Instance.new("BodyGyro")S.MaxTorque=Vector3.new(math.huge,math.huge,math.huge)S.D=100;S.P=10000;S.CFrame=Q;S.Parent=HumanoidRootPart;while AutoFreeze do HumanoidRootPart.CFrame=Q;task.wait(0.01)end;if R then R:Destroy()end;if S then S:Destroy()end end)end;I:AddButton("Sell Fish (In Hand)",false,function()local T=HumanoidRootPart.CFrame;local U=CFrame.new(464,151,232)local V=false;if AutoFreeze then V=true;AutoFreeze=false end;HumanoidRootPart.CFrame=U;task.wait(0.5)workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Marc Merchant"):WaitForChild("merchant"):WaitForChild("sell"):InvokeServer()task.wait(1)HumanoidRootPart.CFrame=T;if V then AutoFreeze=true;rememberPosition()end end)local W=game.Players.LocalPlayer;local X=W.PlayerGui;B:AddButton("Show Ui Buy Boat",function()if X and X:FindFirstChild("hud")and X.hud:FindFirstChild("safezone")and X.hud.safezone:FindFirstChild("shipwright")then X.hud.safezone.shipwright.Visible=not X.hud.safezone.shipwright.Visible else print("Error: Could not find the necessary UI elements.")end end)z:AddToggle("Auto Reel (Blatant)",false,g.AutoMinigameBlatant)E:AddToggle("Repair Map",false,function()local Player=game.Players.LocalPlayer;for _,Y in pairs(Player.Backpack:GetChildren())do if Y.Name=="Treasure Map"then Player.Character.Humanoid:EquipTool(Y)workspace.world.npcs["Jack Marrow"].treasure.repairmap:InvokeServer()end end end)z:AddToggle("Auto Cast",false,g.AutoCast)E:AddToggle("Collect Treasure",false,function()for _,Y in ipairs(game:GetService("Workspace"):GetDescendants())do if Y.ClassName=="ProximityPrompt"then Y.HoldDuration=0 end end;for _,Y in pairs(workspace.world.chests:GetDescendants())do if Y:IsA("Part")and Y:FindFirstChild("ChestSetup")then game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=Y.CFrame;for _,Z in pairs(workspace.world.chests:GetDescendants())do if Z.Name=="ProximityPrompt"then fireproximityprompt(Z)end end;task.wait(1)end end end)M:AddToggle("Walk On Water",false,function(m)local WalkZone="Ocean"if m then for _,Y in pairs(workspace.zones.fishing:GetChildren())do if Y.Name==WalkZone then Y.CanCollide=true end;if Y.Name=="Deep Ocean"and WalkZone=="Ocean"then Y.CanCollide=true end end else for _,Y in pairs(workspace.zones.fishing:GetChildren())do if Y.Name==WalkZone then Y.CanCollide=false end;if Y.Name=="Deep Ocean"and WalkZone=="Ocean"then Y.CanCollide=false end end end end)local a0=game:GetService("Players")local a1=game:GetService("RunService")local W=a0.LocalPlayer;local a2=W.Character or W.CharacterAdded:Wait()local HumanoidRootPart=a2:WaitForChild("HumanoidRootPart")local a3=HumanoidRootPart.CFrame;local a4=false;local function a5()while a4 do task.wait()if HumanoidRootPart then HumanoidRootPart.CFrame=a3 end end end;M:AddToggle("Freeze Player",false,function(m)a4=m;if a4 then a3=HumanoidRootPart.CFrame;task.spawn(a5)print("Player freezing enabled.")else print("Player freezing disabled.")end end)local a6=game:GetService("VirtualInputManager")local a7=game:GetService("ReplicatedStorage")local a8=game:GetService("VirtualUser")local a9=game:GetService("HttpService")local aa=game:GetService("GuiService")local a1=game:GetService("RunService")local Workspace=game:GetService("Workspace")local a0=game:GetService("Players")local ab=game:GetService('StarterGui')local ac=game:GetService('ContextActionService')local ad=game:GetService('UserInputService')local W=a0.LocalPlayer;local ae=W.Character or W.CharacterAdded:Wait()local HumanoidRootPart=ae:FindFirstChild("HumanoidRootPart")local af=HumanoidRootPart:WaitForChild("user")local ag=Workspace:FindFirstChild("active")local ah=Workspace:FindFirstChild("zones"):WaitForChild("fishing")local ai=Workspace:FindFirstChild("world"):WaitForChild("spawns"):WaitForChild("TpSpots")local P=Workspace:FindFirstChild("world"):WaitForChild("npcs")local X=W:WaitForChild("PlayerGui")local aj=Instance.new("ScreenGui",X)local ak=Instance.new("TextLabel",aj)local al=a1.RenderStepped;local am=al.Wait;B:AddButton("Protect Identity",function()getgenv().name="discord.gg/ronix on top"local an=game.Players.LocalPlayer;for ao,m in next,game:GetDescendants()do if m.ClassName=="TextLabel"then local ap=string.find(m.Text,an.Name)if ap then local aq=m.Text:gsub(an.Name,name)m.Text=aq end;m:GetPropertyChangedSignal("Text"):Connect(function()local aq=m.Text:gsub(an.Name,name)m.Text=aq end)end end;game.DescendantAdded:Connect(function(m)if m.ClassName=="TextLabel"then local ap=string.find(m.Text,an.Name)m:GetPropertyChangedSignal("Text"):Connect(function()local aq=m.Text:gsub(an.Name,name)m.Text=aq end)if ap then local aq=m.Text:gsub(an.Name,name)m.Text=aq end end end)if af:FindFirstChild("streak")then af.streak.Text="HIDDEN"end;if af:FindFirstChild("level")then af.level.Text="Level: HIDDEN"end;if af:FindFirstChild("level")then af.user.Text="HIDDEN"end;local ar=W:WaitForChild("PlayerGui"):WaitForChild("hud"):WaitForChild("safezone")if ar:FindFirstChild("coins")then ar.coins.Text="HIDDEN$"end;if ar:FindFirstChild("lvl")then ar.lvl.Text="HIDDEN LVL"end;task.wait(0.01)end)M:AddDropdown("Walk On Water Zone",{"Ocean","Desolate Deep","The Depths"},Ocean,function(as)WalkZone=as end)AllFuncs['To Pos Stand']=function()while Config['To Pos Stand']and task.wait()do if not Config['SelectPositionStand']then Notify("Pls Select Position")Config['To Pos Stand']=false;return end;pcall(function()W.Character:FindFirstChild("HumanoidRootPart").CFrame=Config['SelectPositionStand']end)end end;local Config={['Toggle Walk Speed']=false,['Set Walk Speed']=50,['Toggle Jump Power']=false,['Set Jump Power']=50}local W=game.Players.LocalPlayer;AllFuncs['Toggle Walk Speed']=function()while true do if Config['Toggle Walk Speed']then pcall(function()local at=W.Character and W.Character:FindFirstChild("Humanoid")if at then at.WalkSpeed=Config['Set Walk Speed']end end)else pcall(function()local at=W.Character and W.Character:FindFirstChild("Humanoid")if at then at.WalkSpeed=16 end end)end;task.wait(0.1)end end;AllFuncs['Toggle Jump Power']=function()while true do if Config['Toggle Jump Power']then pcall(function()local at=W.Character and W.Character:FindFirstChild("Humanoid")if at then at.JumpPower=Config['Set Jump Power']end end)else pcall(function()local at=W.Character and W.Character:FindFirstChild("Humanoid")if at then at.JumpPower=50 end end)end;task.wait(0.1)end end;O:AddLabel("Useless because anti afk auto loads!")H:AddLabel("Turn on when you first join")M:AddToggle('Toggle Walk Speed',false,function(au)Config['Toggle Walk Speed']=au;print("Walk Speed Toggle:",au)end)M:AddToggle('Toggle Jump Power',false,function(au)Config['Toggle Jump Power']=au;print("Jump Power Toggle:",au)end)M:AddSlider('Walk Speed',1,500,50,function(au)Config['Set Walk Speed']=au;print('Walk Speed Set to:',au)end)M:AddSlider('Jump Power',1,500,50,function(au)Config['Set Jump Power']=au;print('Jump Power Set to:',au)end)task.spawn(AllFuncs['Toggle Walk Speed'])task.spawn(AllFuncs['Toggle Jump Power'])B:AddToggle("Remove Fog",false,function(m)if m then if game:GetService("Lighting"):FindFirstChild("Sky")then game:GetService("Lighting"):FindFirstChild("Sky").Parent=game:GetService("Lighting").bloom end else if game:GetService("Lighting").bloom:FindFirstChild("Sky")then game:GetService("Lighting").bloom:FindFirstChild("Sky").Parent=game:GetService("Lighting")end end end)local a1=game:GetService("RunService")local av;B:AddToggle("Day",false,function(m)if m then if av then return end;av=a1.Heartbeat:Connect(function()game:GetService("Lighting").TimeOfDay="12:00:00"end)else if av then av:Disconnect()av=nil end end end)local aw;B:AddToggle("Night",false,function(m)if m then if aw then return end;aw=a1.Heartbeat:Connect(function()game:GetService("Lighting").TimeOfDay="22:00:00"end)else if aw then aw:Disconnect()aw=nil end end end)local ax=game:GetService("TeleportService")local a0=game:GetService("Players")F:AddButton("Rejoin Server",function()ax:TeleportToPlaceInstance(game.placeId,game.JobId,a0.LocalPlayer)end)N:AddToggle("Fish Radar",false,function(m)for _,Y in pairs(game:GetService("CollectionService"):GetTagged("radarTag"))do if Y:IsA("BillboardGui")or Y:IsA("SurfaceGui")then Y.Enabled=m end end end)local function ay()local az=game.Players.LocalPlayer.Character;if az and az:FindFirstChild("HumanoidRootPart")then return az.HumanoidRootPart.Position end;return Vector3.new(0,0,0)end;local function ExportValue(aA)return string.format("%.2f",aA)end;N:AddToggle("Gps",false,function(m)local X=game.Players.LocalPlayer.PlayerGui;local ar=X:WaitForChild("hud")local aB=ar:WaitForChild("safezone")local aC=aB:WaitForChild("backpack")if m then local aD=game:GetService("ReplicatedStorage").resources.items.items.GPS.GPS.gpsMain.xyz:Clone()aD.Parent=aC;local aE=ay()local aF=string.format("%s,%s,%s",ExportValue(aE.X),ExportValue(aE.Y),ExportValue(aE.Z))aD.Text="<font color='#ff4949'>X</font><font color='#a3ff81'>Y</font><font color='#626aff'>Z</font>: "..aF;BypassGpsLoop=game:GetService("RunService").Heartbeat:Connect(function()local aE=ay()local aF=string.format("%s,%s,%s",ExportValue(aE.X),ExportValue(aE.Y),ExportValue(aE.Z))aD.Text="<font color='#ff4949'>X</font><font color='#a3ff81'>Y</font><font color='#626aff'>Z</font>: "..aF end)else if aC:FindFirstChild("xyz")then aC:FindFirstChild("xyz"):Destroy()end;if BypassGpsLoop then BypassGpsLoop:Disconnect()BypassGpsLoop=nil end end end)local a0=game:GetService("Players")local W=a0.LocalPlayer;local X=W:WaitForChild("PlayerGui")local ar=X:WaitForChild("hud")local aB=ar:WaitForChild("safezone")aB.Visible=true;N:AddToggle("Show/Hide UIs",false,function(m)if m then aB.Visible=false;print("UI is now visible.")else aB.Visible=true;print("UI is now hidden.")end end)N:AddToggle("Infinite Oxygen",false,function(m)W.Character.client.oxygen.Disabled=m end)N:AddToggle("Clear Weather",false,function(m)local a7=game:GetService("ReplicatedStorage")local aG=a7:WaitForChild("world"):WaitForChild("weather")local OldWEA=OldWEA or aG.Value;if m then aG.Value="Clear"else aG.Value=OldWEA end end)M:AddToggle("Noclip",false,function(m)Config['Toggle Noclip']=m;if m then local aH=W.Character:GetDescendants()for _,aI in pairs(aH)do if aI:IsA("BasePart")then aI.CanCollide=false end end else local aH=W.Character:GetDescendants()for _,aI in pairs(aH)do if aI:IsA("BasePart")then aI.CanCollide=true end end end end)N:AddToggle("Anti Lag",false,function(m)if m then for _,Y in pairs(game:GetDescendants())do if Y:IsA("Part")or Y:IsA("UnionOperation")or Y:IsA("MeshPart")then if Y.Transparency~=1 then Y.Material=Enum.Material.SmoothPlastic end elseif Y:IsA("ParticleEmitter")or Y:IsA("Trail")then Y:Destroy()end end else end end)Config=_G.Config or{}Config['Farm Fish']=false;local a0=game.Players;local W=a0.LocalPlayer;local a7=game:GetService("ReplicatedStorage")local a1=game:GetService("RunService")local aJ=W.Backpack;local X=W.PlayerGui;local a8=game:GetService("VirtualUser")local a6=game:GetService("VirtualInputManager")local aK=a7.playerstats[W.Name].Stats.rod.Value;AllFuncs={}AllFuncs['Farm Fish']=function()while Config['Farm Fish']and task.wait()do if aJ:FindFirstChild(aK)then W.Character.Humanoid:EquipTool(aJ:FindFirstChild(aK))end;if W.Character:FindFirstChild(aK)and W.Character[aK]:FindFirstChild("bobber")then repeat pcall(function()X:FindFirstChild("shakeui").safezone:FindFirstChild("button").Size=UDim2.new(1001,0,1001,0)a8:Button1Down(Vector2.new(1,1))a8:Button1Up(Vector2.new(1,1))end)a1.Heartbeat:Wait()until not W.Character:FindFirstChild(aK)or W.Character[aK].values.bite.Value or not Config['Farm Fish']repeat a7.events.reelfinished:FireServer(1000000000000000000000000,true)task.wait(0.5)until not W.Character:FindFirstChild(aK)or not W.Character[aK].values.bite.Value or not Config['Farm Fish']else if W.Character:FindFirstChild(aK)then W.Character[aK].events.cast:FireServer(1000000000000000000000000)task.wait(2)end end end end;function ExportValue(aL,aM)return tonumber(string.format("%."..(aM or 1)..'f',aL))end;y:AddToggle("Auto Farm (Laggy v1)",false,function(aN)Config['Farm Fish']=aN;if aN then AllFuncs['Farm Fish']()end end)L:AddButton("Auto Heaven Rod",function()spawn(function()local aO,aP,aQ,aR=false,false,false,false;local aS,aT,aU=false,false,false;Module:Run_Loop("Auto Get Heaven's Rod",function()if Module:IsHaveRod("Heaven's Rod")then k("You Already Have Heaven's Rod!")wait(5)return end;if not World.map["Northern Summit"]:FindFirstChild("NorthFinalPuzzle")then Module:GetTo(CFrame.new(19990.3789,1136.4281,5536.5249,0.984981179,-8.43332231e-08,-0.172661752,7.71411734e-08,1,-4.83640221e-08,0.172661752,3.43183189e-08,0.984981179))else if Player.Backpack:FindFirstChild("Blue Energy Crystal")and not aP then if World.map["Northern Summit"].NorthFinalPuzzle.Shards.Blue.handle.Prompt.Enabled then if Module:GetMagnitude(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))>5 then Module:GetTo(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))else pcall(function()a7.packages.Net["RE/NorthFinalPuzzleService/Place"]:FireServer("Blue")end)Module:FirePrompt(World.map["Northern Summit"].NorthFinalPuzzle.Shards.Blue.handle.Prompt)wait(2)aP=true end elseif not World.map["Northern Summit"].NorthFinalPuzzle.Shards.Blue.handle.Prompt.Enabled then aP=true end end;if Player.Backpack:FindFirstChild("Green Energy Crystal")and not aQ then if World.map["Northern Summit"].NorthFinalPuzzle.Shards.Green.handle.Prompt.Enabled then if Module:GetMagnitude(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))>5 then Module:GetTo(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))else pcall(function()a7.packages.Net["RE/NorthFinalPuzzleService/Place"]:FireServer("Green")end)Module:FirePrompt(World.map["Northern Summit"].NorthFinalPuzzle.Shards.Green.handle.Prompt)wait(2)aQ=true end elseif not World.map["Northern Summit"].NorthFinalPuzzle.Shards.Green.handle.Prompt.Enabled then aQ=true end end;if Player.Backpack:FindFirstChild("Red Energy Crystal")and not aO then if World.map["Northern Summit"].NorthFinalPuzzle.Shards.Red.handle.Prompt.Enabled then if Module:GetMagnitude(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))>5 then Module:GetTo(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))else pcall(function()a7.packages.Net["RE/NorthFinalPuzzleService/Place"]:FireServer("Red")end)Module:FirePrompt(World.map["Northern Summit"].NorthFinalPuzzle.Shards.Red.handle.Prompt)wait(2)aO=true end elseif not World.map["Northern Summit"].NorthFinalPuzzle.Shards.Red.handle.Prompt.Enabled then aO=true end end;if Player.Backpack:FindFirstChild("Yellow Energy Crystal")and not aR then if World.map["Northern Summit"].NorthFinalPuzzle.Shards.Yellow.handle.Prompt.Enabled then if Module:GetMagnitude(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))>5 then Module:GetTo(CFrame.new(19967.16015625,1137.2425537109375,5362.26904296875))else pcall(function()a7.packages.Net["RE/NorthFinalPuzzleService/Place"]:FireServer("Yellow")end)Module:FirePrompt(World.map["Northern Summit"].NorthFinalPuzzle.Shards.Yellow.handle.Prompt)wait(2)aR=true end elseif not World.map["Northern Summit"].NorthFinalPuzzle.Shards.Yellow.handle.Prompt.Enabled then aR=true end end;if aO and aP and aQ and aR then a7.events.purchase:FireServer("Heaven's Rod","Rod",nil,1)wait(1)end;if not Player.Backpack:FindFirstChild("Blue Energy Crystal")and not aP then if not Player.Backpack:FindFirstChild("Pickaxe")and not aT then Module:BuyShop("Pickaxe","Item",1)aT=true;wait(10)else if Module:GetMagnitude(CFrame.new(20124.8711,212.725845,5449.35498,0.793378353,0,0.608728826,0,1,0,-0.608728826,0,0.793378353))>6 then Module:GetTo(CFrame.new(20124.8711,212.725845,5449.35498,0.793378353,0,0.608728826,0,1,0,-0.608728826,0,0.793378353))else if Module:NearestPromptCheck(10,"Blue Energy Crystal")then pcall(function()a7.packages.Net["RF/ItemSpawnCollect"]:InvokeServer("Blue Energy Crystal")end)Module:NearestPrompt(10)else if Player.Character:FindFirstChild("Pickaxe")then Player.Character:FindFirstChild("Pickaxe"):Activate()else Module:EquipTool("Pickaxe")end end end end elseif not Player.Backpack:FindFirstChild("Yellow Energy Crystal")and not aR then if Module:GetMagnitude(CFrame.new(19499.6953125,335.21728515625,5549.265625))>6 then Module:GetTo(CFrame.new(19499.6953125,335.21728515625,5549.265625))else if Module:NearestPromptCheck(10,"Yellow Energy Crystal")then pcall(function()a7.packages.Net["RF/ItemSpawnCollect"]:InvokeServer("Yellow Energy Crystal")end)Module:NearestPrompt(10)else if not Player.Backpack:FindFirstChild("Avalanche Totem")and not aS then Module:BuyShop("Avalanche Totem","Item",1)aS=true;wait(10)end;if Player.Character:FindFirstChild("Avalanche Totem")then Player.Character:FindFirstChild("Avalanche Totem"):Activate()wait(20)else Module:EquipTool("Avalanche Totem")end end end elseif not Player.Backpack:FindFirstChild("Red Energy Crystal")and not aO then if not aU then a7.packages.Net["RF/NorthExp/PurchaseShard"]:InvokeServer()aU=true;wait(10)end elseif not Player.Backpack:FindFirstChild("Green Energy Crystal")and not aQ then if World.npcs:FindFirstChild("???")then Module:TalkToNPC("???",function()if string.find(X.options.safezone["1option"].text,"You're right, I'm freezing out here!")then X.options.safezone["1option"].Selectable=true;Module:ClickUi(X.options.safezone["1option"].button)elseif string.find(X.options.safezone["1option"].text,"I'm fascinated by the mysteries this mountain holds.")then X.options.safezone["1option"].Selectable=true;Module:ClickUi(X.options.safezone["1option"].button)elseif string.find(X.options.safezone["1option"].text,"Of course, that would be great")then X.options.safezone["1option"].Selectable=true;Module:ClickUi(X.options.safezone["1option"].button)end end)else Module:GetTo(CFrame.new(19872.7266,448.0941,5556.5830))end end end end)end)end)local function aV(aW)local a0=game:GetService("Players")local W=a0.LocalPlayer;local az=W.Character or W.CharacterAdded:Wait()local aC=W:WaitForChild("Backpack")local aX=az:FindFirstChildOfClass("Tool")if aX then for aY=1,aW do local aZ=aX:Clone()aZ.Parent=aC end else k:Notify("Failed to Dupe","Please Hold a fish to Dupe ",5)end end;L:AddButton("Dupe Fish [Visual]",function()aV(math.random(5,10))end)local a7=game:GetService("ReplicatedStorage")local a0=game:GetService("Players")local W=a0.LocalPlayer;local a_=a7:WaitForChild("playerstats"):WaitForChild(W.Name):WaitForChild("Stats")local b0=require(a7:WaitForChild("modules"):WaitForChild("fx"):WaitForChild("debris"))local b1=require(a7:WaitForChild("modules"):WaitForChild("fx"))local function b2(aA)local b3=tostring(math.ceil(aA))repeat b3,_=string.gsub(b3,"^(-?%d+)(%d%d%d)","%1,%2")until _==0;return b3 end;local function b4(b5)local b6=a_:WaitForChild("coins").Value;local b7=b6+b5;local b8=Instance.new("NumberValue")b8.Value=b6;game:GetService("TweenService"):Create(b8,TweenInfo.new(0.6,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Value=b7}):Play()b1:PlaySound(a7.resources.sounds.sfx.ui.currencygain,game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins,true)b8:GetPropertyChangedSignal("Value"):Connect(function()game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.Text=tostring(b2(b8.Value).." C$")end)b0:AddItem(b8,0.7)if b6>b7 then require(game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins:FindFirstAncestor("hud").Parent:WaitForChild("GeneralUIModule")):ListOnBottomRight("-"..b2(b6-b7).." C$",Color3.fromRGB(212,62,62),0)game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.TextColor3=Color3.fromRGB(212,62,62)else require(game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins:FindFirstAncestor("hud").Parent:WaitForChild("GeneralUIModule")):ListOnBottomRight("+"..b2(b7-b6).." C$",Color3.fromRGB(99,203,61),0)game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.TextColor3=Color3.fromRGB(99,203,61)end;for aY=1,2 do task.wait(0.1)game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.TextColor3=Color3.fromRGB(255,253,228)task.wait(0.1)game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.TextColor3=b6>b7 and Color3.fromRGB(212,62,62)or Color3.fromRGB(99,203,61)end;b6=b7;a_:WaitForChild("coins").Value=b7;game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.Text=tostring(b2(b7).." C$")game:GetService("Players").LocalPlayer.leaderstats["C$"].Value=game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.coins.Text end;getgenv().VisualDupCoins=false;L:AddToggle("Auto Dupe Coin [Visual]",false,function(b9)getgenv().VisualDupCoins=b9;if getgenv().VisualDupCoins then while getgenv().VisualDupCoins do local ba=math.random(60000,105000)b4(ba)task.wait()end end end)local bb="Legit"local bc="Navigation"local bd="Blatant"local be=false;local bf=false;local bg=false;local bf=false;local bc="Navigation"local bh=nil;local bi=0;local bj=game:GetService("Players")local a1=game:GetService("RunService")local aa=game:GetService("GuiService")local a6=game:GetService("VirtualInputManager")local W=bj.LocalPlayer;local X=W:WaitForChild("PlayerGui")local function bk()if not bf then return end;if bc=="Navigation"then xpcall(function()local bl=X:FindFirstChild("shakeui")if not bl then return end;local aB=bl:FindFirstChild("safezone")local bm=aB and aB:FindFirstChild("button")if not bm then return end;task.wait(0.2)aa.SelectedObject=bm;if aa.SelectedObject==bm then a6:SendKeyEvent(true,Enum.KeyCode.Return,false,game)a6:SendKeyEvent(false,Enum.KeyCode.Return,false,game)end;task.wait(0.1)aa.SelectedObject=nil end,function(bn)end)elseif bc=="Mouse"then local bo=tick()if bo-bi<0.1 then return end;bi=bo;xpcall(function()local bl=X:FindFirstChild("shakeui")if not bl then return end;local aB=bl:FindFirstChild("safezone")local bm=aB and aB:FindFirstChild("button")if not bm then return end;local bp=bm.AbsolutePosition;local bq=bm.AbsoluteSize;local br,bs=bp.X+bq.X/2,bp.Y+bq.Y/2;a6:SendMouseButtonEvent(br,bs,0,true,W,0)task.wait(0.07)a6:SendMouseButtonEvent(br,bs,0,false,W,0)end,function(bn)end)end end;local function bt()if not bh and bf then bh=a1.RenderStepped:Connect(bk)end end;local function bu()if bh then bh:Disconnect()bh=nil end end;if z and z.AddToggle then z:AddToggle("Auto Shake",false,function(b9)bf=b9;if b9 then bt()else bu()end end)end;local bv=B:AddToggle("Hunt Megaladon",false,g.MegaladonHunting)A:AddDropdown('Auto Cast Mode',{'Legit','Blatant'},'Blatant',function(au)bb=au end)A:AddDropdown('Auto Shake Mode',{'Navigation','Mouse'},'Navigation',function(au)bc=au end)A:AddDropdown('Auto Reel Mode',{'Legit','Blatant'},'Blatant',function(au)bd=au end)F:AddButton("Hop Server",function()AllFuncs.HopServer(true)end)G:AddButton("Set Webhook URL",function()j:KeySystem("Webhook URL - Put URL as key and click Submit to set it.","",function(bw)d.WebhookURL=bw;k:Notify("info","Set Webhook Successfully","Set webhook to "..bw,5)return true end):Callback(function()end)end)G:AddToggle("Send Webhook Notifications",false,g.WebhookNotifications)G:AddToggle("Webhook Notifications for Priority Events",false,g.PriorityWebhook)local ai=Workspace:FindFirstChild("world"):WaitForChild("spawns"):WaitForChild("TpSpots")local bx={}for aY,Y in pairs(ai:GetChildren())do if table.find(bx,Y.Name)==nil then table.insert(bx,Y.Name)end end;for _,by in pairs(bx)do local bz=ai:FindFirstChild(by)and ai[by].Position;if bz then D:AddButton("Teleport to "..by,function()game.Players.LocalPlayer.Character.HumanoidRootPart.Position=bz end)end end;J:AddButton("Teleport to Aurora",function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(-1811,-137,-3282)end)J:AddButton("Teleport to Sundial",function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(-1148,135,-1075)end)J:AddButton("Teleport to Windset",function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(2849,178,2702)end)J:AddButton("Teleport to Smokescreen",function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(2789,140,-625)end)J:AddButton("Teleport to Tempest",function()game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(35,133,1943)end)K:AddButton("Teleport to Strange Whirlpool",function()local bA=Vector3.new(25,135,25)local bB=game.Workspace.zones.fishing:FindFirstChild("Isonade")if not bB then return ShowNotification("Not found Strange Whirlpool")end;HumanoidRootPart.CFrame=CFrame.new(bB.Position+bA)end)K:AddButton("Teleport to Great Hammerhead Shark",function()local bA=Vector3.new(0,135,0)local bB=game.Workspace.zones.fishing:FindFirstChild("Great Hammerhead Shark")if not bB then return ShowNotification("Not found Great Hammerhead Shark")end;HumanoidRootPart.CFrame=CFrame.new(bB.Position+bA)end)K:AddButton("Teleport to Great White Shark",function()local bA=Vector3.new(0,135,0)local bB=game.Workspace.zones.fishing:FindFirstChild("Great White Shark")if not bB then return ShowNotification("Not found Great White Shark")end;HumanoidRootPart.CFrame=CFrame.new(bB.Position+bA)end)K:AddButton("Teleport to Whale Shark",function()local bA=Vector3.new(0,135,0)local bB=game.Workspace.zones.fishing:FindFirstChild("Whale Shark")if not bB then return ShowNotification("Not found Whale Shark")end;HumanoidRootPart.CFrame=CFrame.new(bB.Position+bA)end)K:AddButton("Teleport to The Depths - Serpent",function()local bA=Vector3.new(0,50,0)local bB=game.Workspace.zones.fishing:FindFirstChild("The Depths - Serpent")if not bB then return ShowNotification("Not found The Depths - Serpent")end;HumanoidRootPart.CFrame=CFrame.new(bB.Position+bA)end)D:AddButton("Best Spot",function()local bC=Instance.new("Part")bC.Size=Vector3.new(10,1,10)bC.Position=Vector3.new(1447.8507080078125,131.49998474121094,-7649.64501953125)bC.Anchored=true;bC.BrickColor=BrickColor.new("White")bC.Material=Enum.Material.SmoothPlastic;bC.Parent=game.Workspace;local bD=Instance.new("BillboardGui")bD.Adornee=bC;bD.Size=UDim2.new(0,200,0,50)bD.StudsOffset=Vector3.new(0,5,0)bD.Parent=game.Workspace;local bE=Instance.new("TextLabel")bE.Text="This is forced labor for bdokkx, dynamicarrays"bE.TextColor3=Color3.fromRGB(255,0,0)bE.TextSize=20;bE.BackgroundTransparency=1;bE.Size=UDim2.new(1,0,1,0)bE.TextScaled=true;bE.Parent=bD;game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame=CFrame.new(1447.8507080078125,133.49998474121094,-7649.64501953125)end)D:AddButton("Safe Place",function()local bF=Instance.new("Part")bF.Size=Vector3.new(30,1,30)bF.Position=Vector3.new(math.random(-2000,2000),math.random(50000,90000),math.random(-2000,2000))bF.Anchored=true;bF.BrickColor=BrickColor.new("Bright purple")bF.Material=Enum.Material.ForceField;bF.Parent=workspace;local az=game.Players.LocalPlayer.Character;if az and az:FindFirstChild("HumanoidRootPart")then az.HumanoidRootPart.CFrame=CFrame.new(bF.Position+Vector3.new(0,5,0))end end)local bG={}H:AddToggle("Teleport To Buy",false,function(aN)if not bG["TeleportToBuy"]then for _,Y in pairs(workspace.world.interactables:GetDescendants())do if Y:IsA("ProximityPrompt")then Y.HoldDuration=0;H:AddButton("Buy "..Y.Parent.Name,function()local bH=W.Character:FindFirstChild("HumanoidRootPart")if bH then if fireproximityprompt and not aN then local bI=bH.CFrame;bH.CFrame=Y.Parent:GetPivot()delay(0.3,function()fireproximityprompt(Y,1)bH.CFrame=bI end)else if not fireproximityprompt then Notify("Execution does not support 'fireproximityprompt'.")else bH.CFrame=Y.Parent:GetPivot()end end else Notify("HumanoidRootPart not found.")end end)end end;bG["TeleportToBuy"]=true end end)H:AddButton("Buy Enchant Relic",function()if not buttonEnabled then warn("Button is currently disabled!")return end;local bJ=game.Players.LocalPlayer;local az=bJ.Character or bJ.CharacterAdded:Wait()local bH=az:FindFirstChild("HumanoidRootPart")if not bH then warn("HumanoidRootPart not found!")return end;local bK=bH.Position;local bL=Vector3.new(-931.525,223.784,-986.849)bH.CFrame=CFrame.new(bL)local bM,bn=pcall(function()local bN=workspace:WaitForChild("world"):WaitForChild("npcs"):WaitForChild("Merlin"):WaitForChild("Merlin"):WaitForChild("power")if bN then bN:InvokeServer()else warn("Merlin power function not found!")end end)if not bM then warn("Error invoking Merlin power:",bn)end;task.wait(0.1)bH.CFrame=CFrame.new(bK)end)task.delay(5,function()buttonEnabled=true;print("Button is now enabled!")end)D:AddButton("Goto GPS Position",function()j:KeySystem("Put position like this WITHOUT SPACES: X,Y,Z","",i.TPToPos):Callback(function()end)end)local bO=v:AddSection("Hunting","left")local bv=bO:AddToggle("Hunt Priorities",false,g.MegaladonHunting)bO:AddButton("Add Fish To List",function()e.Pr=e.Pr+1;local bP=v:AddSection("Priority "..tostring(e.Pr),"right")local bQ=bP:AddLabel("Rod: None")local bR=bP:AddLabel("Fish: None")d.Priorities[e.Pr]={Fish="Nothing lol",Rod="None"}bP:AddButton("Change Rod To Current Rod",function()d.Priorities[e.Pr].Rod=h.FishingRod;bQ:Text("Rod: "..h.FishingRod)end)bP:AddButton("Set Fish",function()j:KeySystem("Type Fish Name In, MAKE SURE TO SPELL IT RIGHT","",function(bS)d.Priorities[e.Pr].Fish=bS;bR:Text("Fish: "..bS)return true end):Callback(function()end)end)end)C:AddLabel("Fisch Ronix Hub Script by dynamicarrays, bdokkx")C:AddButton("Copy Discord Link",function()setclipboard("discord.gg/ronix")k:Notify("Copied","Copied","Copied discord link to clipboard",4)end)local bT=p:AddSection("Abundances","right")local bU={}local bV={}local bW=nil;local bX=nil;local bY=bT:AddDropdown("Abundances",bU,"Loading",function(bZ)bX:Text("Chance: "..tostring(bV[bZ].Chance).."%")bW=bV[bZ]end)bX=bT:AddLabel("Chance: 0%")local b_=bT:AddButton("Go to Abundance",function()game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(bW.Position.X,137.77,bW.Position.Z)end)local c0=game:GetService("TweenService")local a7=game:GetService("ReplicatedStorage")local a8=game:GetService("VirtualUser")local a1=game:GetService("RunService")local Config=_G.Config or{}local AllFuncs={}Config['Farm Fish']=false;local c1=bT:AddButton("Autofarm selected fish",function()if not bW then warn("No abundance selected.")return end;local bL=Vector3.new(bW.Position.X,137.77,bW.Position.Z)game.Players.LocalPlayer.Character.HumanoidRootPart.Position=bL;local c2=Vector3.new(bL.X,bL.Y-5,bL.Z)local c3=Instance.new("Part")c3.Position=c2;c3.Size=Vector3.new(5,1,5)c3.Anchored=true;c3.Color=Color3.new(0,1,0)c3.Name="AutoFarmBlock"c3.Parent=workspace;if not Config['Farm Fish']then print("Starting Farm Fish...")Config['Farm Fish']=true;AllFuncs['Farm Fish'](c3)else print("Farm Fish is already running.")end end)AllFuncs['Farm Fish']=function(c3)local bJ=game.Players.LocalPlayer;local aK=game.ReplicatedStorage.playerstats[bJ.Name].Stats.rod.Value;while Config['Farm Fish']and task.wait()do if aJ:FindFirstChild(aK)then bJ.Character.Humanoid:EquipTool(aJ:FindFirstChild(aK))end;if bJ.Character:FindFirstChild(aK)and bJ.Character[aK]:FindFirstChild("bobber")then repeat pcall(function()bJ.PlayerGui:FindFirstChild("shakeui").safezone:FindFirstChild("button").Size=UDim2.new(1001,0,1001,0)a8:Button1Down(Vector2.new(1,1))a8:Button1Up(Vector2.new(1,1))end)a1.Heartbeat:Wait()until not Config['Farm Fish']or not bJ.Character:FindFirstChild(aK)or bJ.Character[aK].values.bite.Value;repeat if game.ReplicatedStorage:FindFirstChild("events")and game.ReplicatedStorage.events:FindFirstChild("reelfinished")then game.ReplicatedStorage.events.reelfinished:FireServer(1000000000000000000000000,true)end;task.wait(0.5)until not Config['Farm Fish']or not bJ.Character:FindFirstChild(aK)or not bJ.Character[aK].values.bite.Value else if bJ.Character:FindFirstChild(aK)then bJ.Character[aK].events.cast:FireServer(1000000000000000000000000)task.wait(2)end end end;if c3 and c3.Parent then c3:Destroy()end;print("Farm Fish loop has exited.")end;bT:AddButton("Stop AutoFarm",function()Config['Farm Fish']=false;print("AutoFarm has been stopped.")local c3=workspace:FindFirstChild("AutoFarmBlock")if c3 then c3:Destroy()end end)local c4={}local c5=0;while c5<100 do c5=c5+1;p:AddSection("Scrolling Space","right")end;while task.wait(5)do local c6=a.GetAllAbundanceZones()bV=c6;bU={}for bR,c7 in pairs(bV)do table.insert(bU,bR)end;i.CheckForAbundancesInPriorityListAndTakeAction()bY:Refresh(bU)end end;function f.Overlap(c8,c9)local ca=c8.AbsolutePosition;local cb=ca+c8.AbsoluteSize;local cc=c9.AbsolutePosition;local cd=cc+c9.AbsoluteSize;return ca.x<cd.x and cb.x>cc.x and(ca.y<cd.y and cb.y>cc.y)end;function f.SendWebhookData(ce,cf)local cg=cf;local ch=1950;local ci={}local a9=game:GetService("HttpService")while#cg>0 do local cj=cg:sub(1,ch)if#cg>ch then local ck=cj:match(".*\n()")if ck then cj=cg:sub(1,ck-1)end end;table.insert(ci,cj)cg=cg:sub(#cj+1)end;for aY,cj in ci do local cl={content=cj}request({Url=ce,Method="POST",Headers={["Content-Type"]="application/json"},Body=a9:JSONEncode(cl)})end end;function f.Split(aq,cm)local cn={}local co=("([^%s]+)"):format(cm)for cp in aq:gmatch(co)do table.insert(cn,cp)end;return cn end;c.State=false;function c.ClickUI(cq)local cr=cq.AbsolutePosition.X+cq.AbsoluteSize.X/2;local cs=cq.AbsolutePosition.Y+cq.AbsoluteSize.Y/2;b:SendMouseButtonEvent(cr,cs,0,true,game,0)task.wait(0.05)b:SendMouseButtonEvent(cr,cs,0,false,game,0)end;function c.Down(cq)c.State=true;local cr=cq.AbsolutePosition.X+cq.AbsoluteSize.X/2;local cs=cq.AbsolutePosition.Y+cq.AbsoluteSize.Y/2;b:SendMouseButtonEvent(cr,cs,0,true,game,0)end;function c.Up(cq)c.State=false;local cr=cq.AbsolutePosition.X+cq.AbsoluteSize.X/2;local cs=cq.AbsolutePosition.Y+cq.AbsoluteSize.Y/2;b:SendMouseButtonEvent(cr,cs,0,false,game,0)end;Config=_G.Config or{}Config['Farm Fish']=false;local a0=game.Players;local W=a0.LocalPlayer;local a7=game:GetService("ReplicatedStorage")local a1=game:GetService("RunService")local aJ=W.Backpack;local X=W.PlayerGui;local a8=game:GetService("VirtualUser")local aK=a7.playerstats[W.Name].Stats.rod.Value;AllFuncs={}AllFuncs['Farm Fish']=function()while Config['Farm Fish']and task.wait()do if aJ:FindFirstChild(aK)then W.Character.Humanoid:EquipTool(aJ:FindFirstChild(aK))end;if W.Character:FindFirstChild(aK)and W.Character[aK]:FindFirstChild("bobber")then repeat pcall(function()X:FindFirstChild("shakeui").safezone:FindFirstChild("button").Size=UDim2.new(1001,0,1001,0)a8:Button1Down(Vector2.new(1,1))a8:Button1Up(Vector2.new(1,1))end)a1.Heartbeat:Wait()until not W.Character:FindFirstChild(aK)or W.Character[aK].values.bite.Value or not Config['Farm Fish']repeat a7.events.reelfinished:FireServer(1000000000000000000000000,true)task.wait(0.5)until not W.Character:FindFirstChild(aK)or not W.Character[aK].values.bite.Value or not Config['Farm Fish']else if W.Character:FindFirstChild(aK)then W.Character[aK].events.cast:FireServer(1000000000000000000000000)task.wait(2)end end end end;AllFuncs.HopServer=function(ct)local ct=ct or false;local cu=game:GetService("HttpService")local cv="https://games.roblox.com/v1/games/"local cw=game.PlaceId;local cx=cv..cw.."/servers/Public?sortOrder=Asc&limit=100"local cy=function(cz)local cA=game:HttpGet(cx..(cz and"&cursor="..cz or""))return cu:JSONDecode(cA)end;local cB,cC;repeat local cD=cy(cC)cB=cD.data[1]cC=cD.nextPageCursor until cB;repeat if not ct then game:GetService("TeleportService"):TeleportToPlaceInstance(cw,cB.id,game.Players.LocalPlayer)else if request then local cE={}local cF=request({Url=string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Desc&limit=100&excludeFullGames=true",game.PlaceId)}).Body;local cG=game:GetService("HttpService"):JSONDecode(cF)if cG and cG.data then for aY,Y in next,cG.data do if type(Y)=="table"and tonumber(Y.playing)and tonumber(Y.maxPlayers)and Y.playing<Y.maxPlayers and Y.id~=game.JobId then table.insert(cE,1,Y.id)end end end;if#cE>0 then game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId,cE[math.random(1,#cE)],game.Players.LocalPlayer)else return"Couldn't find a server."end end end;wait()until game.PlaceId~=game.PlaceId end;function ExportValue(aL,aM)return tonumber(string.format("%."..(aM or 1)..'f',aL))end;AllFuncs['Farm Fish']()function a.RepairMap()workspace.world.npcs["Jack Marrow"].treasure.repairmap:InvokeServer()end;function a.InstantReel()game:GetService("ReplicatedStorage").events.reelfinished:FireServer(100,true)end;function a.Cast()game.Players.LocalPlayer.Character[h.FishingRod].events.cast:FireServer(100,1)end;function a.GetAllAbundanceZones()local cH={}for aY,cI in pairs(game:GetService("Workspace").zones.fishing:GetChildren())do local c7={}if cI:FindFirstChild("Abundance")then if cI:FindFirstChild("Abundance"):FindFirstChild("Chance")then c7.Chance=cI.Abundance.Chance.Value else c7.Chance=1 end;c7.Position=cI.Position;if cH[cI.Abundance.Value]==nil then cH[cI.Abundance.Value]=c7 elseif cH[cI.Abundance.Value].Chance<c7.Chance then cH[cI.Abundance.Value]=c7 end end end;return cH end;function a.SellAll()workspace.world.npcs["Marc Merchant"].merchant.sellall:InvokeServer()end;function a.InitializePossibleDetections(cJ)game:GetService("ReplicatedStorage").modules.fishing.rodresources.events.cast:FireServer(cJ,1)end;function a.DetermineClickActionMinigame()end;function a.GetFish()local cf="Items/Fish:\n"for aY,Y in pairs(game.Players.LocalPlayer.Backpack:GetChildren())do cf=cf..Y.Name.."\n"end;return cf end;function i.CheckForAbundancesInPriorityListAndTakeAction()local cK=a.GetAllAbundanceZones()local cL=math.huge;local cM="Nothing Lol"for cN,cO in pairs(d.Priorities)do if cN<cL then if cK[cO.Fish]then cL=cN;cM=cO.Fish;e.RodToBeEquipped=cO.Tool;e.FishHunted=cM end end end;if cM=="Nothing Lol"then e.Megaladon=false;e.MegaladonPosition=nil;pcall(function()e.MegHuntPlat:Destroy()end)else e.Megaladon=true;e.MegaladonPosition=cK[cM].Position end;return cM end;function i.AutoTotem()for aY,Y in pairs(game.Players.LocalPlayer.Character:GetChildren())do if Y:IsA("Tool")then Y:Activate()end end end;function i.TPToPos(bp)local cP=f.Split(bp,",")local cQ={}for aY,Y in pairs(cP)do cQ[aY]=tonumber(Y)end;game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(unpack(cQ))return true end;function i.TPToPoXYZ(bp)local cP=f.Split(bp,", ")for aY,Y in pairs(cP)do print(aY,Y)end;game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(tonumber(cP[2]),cP[4],tonumber(cP[6]))end;function i.Sell()a.SellAll()end;function i.AutoShake()a.TapShake()end;function i.RepairMap()a.RepairMap()end;function i.TPMap()i.TPToPoXYZ(game:GetService("Players").rbxDistribution.PlayerGui["Treasure Map"].Main.CoordinatesLabel.Text)end;function i.OpenBoatUI()game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.shipwright.Visible=not game:GetService("Players").LocalPlayer.PlayerGui.hud.safezone.shipwright.Visible end;function i.LockPosition()if e.Megaladon==true then if d.MegaladonHunting==true then game.Players.LocalPlayer.Character.HumanoidRootPart.Position=e.MegHuntPos;return end end;game.Players.LocalPlayer.Character.HumanoidRootPart.Position=e.LockedPosition end;function i.FloatOnWater()pcall(function()e.FloatPart:Destroy()end)e.FloatPart=Instance.new("Part",workspace)e.FloatPart.Anchored=true;e.FloatPart.Size=Vector3.new(10,1,10)e.FloatPart.Position=Vector3.new(game.Players.LocalPlayer.Character.HumanoidRootPart.Position.X,133.77,game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Z)game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(game.Players.LocalPlayer.Character.HumanoidRootPart.Position.X,150,game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Z)end;function i.AutoMinigame()local cR=a.DetermineClickActionMinigame()local cS=game:GetService("Players").LocalPlayer.PlayerGui.reel.bar.playerbar;if cR==true then if c.State==false then c.Down(cS)end else if c.State==true then c.Up(cS)end end end;function i.SecondUpdateWebhook()local bS,cT=pcall(function()e.Timer=e.Timer+1;if e.Timer>=300 then e.Timer=0;local cO=a.GetFish()f.SendWebhookData(d.WebhookURL,cO)k:Notify("info","Webhook Notification Sent","The next webhook notification is in 5 minutes.")end end)print(bS,cT)end;function i.AutoCast()a.Cast()end;function i.AutoReel()if W.PlayerGui:FindFirstChild("reel")then a.InstantReel()end end;function i.StepLoop()if d.FloatOnWater==true then pcall(function()i.FloatOnWater()end)end;if d.AutoShake==true then pcall(function()i.AutoShake()end)end;if d.AutoMinigameBlatant==true then pcall(function()i.AutoReel()end)end;if d.AutoTotem==true then pcall(i.AutoTotem)end end;function i.MegaladonHuntInstant()if e.Megaladon==true then if e.MegHuntPlat then return end;if d.PriorityWebhook==true then f.SendWebhookData(d.WebhookURL,"FISH PRIORITY EVENT - "..e.FishHunted)end;repeat task.wait()until game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("reel")==nil;game.Players.LocalPlayer.Character.Humanoid:UnequipTools()game:GetService("ReplicatedStorage").events.equiprod:FireServer(e.RodToBeEquipped)task.wait(1)game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(e.MegaladonPosition.X,500.77,e.MegaladonPosition.Z)e.MegHuntPlat=Instance.new("Part",workspace)e.MegHuntPlat.Anchored=true;e.MegHuntPlat.Size=Vector3.new(10,1,10)e.MegHuntPlat.Position=Vector3.new(game.Players.LocalPlayer.Character.HumanoidRootPart.Position.X,133.77,game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Z)game.Players.LocalPlayer.Character.HumanoidRootPart.Position=Vector3.new(game.Players.LocalPlayer.Character.HumanoidRootPart.Position.X,150,game.Players.LocalPlayer.Character.HumanoidRootPart.Position.Z)task.wait(5)game.Players.LocalPlayer.Character.Humanoid:EquipTool(game.Players.LocalPlayer.Backpack[h.FishingRod])e.MegHuntPos=game.Players.LocalPlayer.Character.HumanoidRootPart.Position end end;function i.Heartbeat()h.FishingRod=game:GetService("ReplicatedStorage").playerstats[tostring(game.Players.LocalPlayer.Name)].Stats.rod.Value end;function i.OneStep()end;function i.Relaxed1Sec()if d.WebhookNotifications==true then pcall(function()i.SecondUpdateWebhook()end)end;if d.AutoCast==true then pcall(function()if d.Lock==true then i.LockPosition()end;i.AutoCast()end)end;if d.MegaladonHunting==true then pcall(function()i.MegaladonHuntInstant()end)end;if d.AutoMap==true then pcall(i.RepairMap)pcall(i.TPMap)end end;function i.Initialize()spawn(function()game:GetService("RunService").RenderStepped:Connect(function()i.Heartbeat()end)end)spawn(function()i.OneStep()end)spawn(function()while task.wait(0.005)do pcall(function()i.StepLoop()end)end end)spawn(function()while task.wait(1)do i.Relaxed1Sec()end end)end;h.Positions={}for aY,Y in game:GetService("Workspace").active["OceanPOI's"]:GetChildren()do h.Positions[Y.Name]=Y.Position end;for aY,Y in game:GetService("Workspace").zones.player:GetChildren()do h.Positions[Y.Name]=Y.Position end;task.spawn(function(cU)warn("ANTI AFK STARTING")pcall(function()for aY,Y in pairs(getconnections(Client.Idled))do Y:Disable()end;Client.Idled:connect(function()game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)wait(1)game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)end)while wait(300)do game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)wait(1)game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)end end)end)i.Initialize()g.Initialize()
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "WindUI Library",
+    Icon = "door-open",
+    Author = "Example UI",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    --Background = "rbxassetid://13511292247", -- rbxassetid only
+    HasOutline = false,
+    -- remove it below if you don't want to use the key system in your script.
+    KeySystem = { 
+        Key = { "1234", "5678" },
+        Note = "The Key is '1234' or '5678",
+        -- Thumbnail = {
+        --     Image = "rbxassetid://18220445082", -- rbxassetid only
+        --     Title = "Thumbnail"
+        -- },
+        URL = "https://github.com/Footagesus/WindUI", -- remove this if the key is not obtained from the link.
+        SaveKey = true, -- optional
+    },
+})
+
+
+Window:EditOpenButton({
+    Title = "Open Example UI",
+    Icon = "monitor",
+    CornerRadius = UDim.new(0,10),
+    StrokeThickness = 2,
+    Color = ColorSequence.new( -- gradient
+        Color3.fromHex("FF0F7B"), 
+        Color3.fromHex("F89B29")
+    ),
+    --Enabled = false,
+    Draggable = true,
+})
+
+
+local Tabs = {
+    ButtonTab = Window:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." }),
+    CodeTab = Window:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." }),
+    ColorPickerTab = Window:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." }),
+    NotificationTab = Window:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." }),
+    ToggleTab = Window:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." }),
+    SliderTab = Window:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." }),
+    InputTab = Window:Tab({ Title = "Input", Icon = "keyboard", Desc = "Accept text and numerical input." }),
+    DropdownTab = Window:Tab({ Title = "Dropdown", Icon = "chevrons-up-down", Desc = "Select from multiple options." }),
+    b = Window:Divider(),
+    WindowTab = Window:Tab({ Title = "Window and File Configuration", Icon = "settings", Desc = "Manage window settings and file configurations." }),
+    CreateThemeTab = Window:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." }),
+    be = Window:Divider(),
+    LongTab = Window:Tab({ Title = "Long and empty tab. Looong and empty.. tab.", Icon = "frown", Desc = "Long Description" }),
+}
+
+Window:SelectTab(1)
+
+Tabs.ButtonTab:Button({
+    Title = "Click Me",
+    Desc = "This is a simple button",
+    Callback = function() print("Button Clicked!") end
+})
+
+Tabs.ButtonTab:Button({
+    Title = "Locked Button",
+    Desc = "This button is locked",
+    Locked = true,
+})
+
+Tabs.ButtonTab:Button({
+    Title = "Submit",
+    Desc = "Click to submit",
+    Callback = function() print("Submitted!") end,
+    Locked = false
+})
+
+
+Tabs.CodeTab:Code({
+    Title = "Example Code",
+    Code = [[
+
+local message = "Hello"
+print(message)
+
+if message == "Hello" then
+    print("Greetings!")
+end
+    ]],
+})
+
+Tabs.CodeTab:Code({
+    Title = "Another Code Example",
+    Code = [[
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/refs/heads/main/dist/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "WindUI Example",
+    Icon = "image",
+    Author = ".ftgs",
+    Folder = "CloudHub",
+    Size = UDim2.fromOffset(580, 460),
+})
+    ]],
+})
+
+
+Tabs.ColorPickerTab:Colorpicker({
+    Title = "Pick a Color",
+    Default = Color3.fromRGB(255, 0, 0),
+    Callback = function(color) print("Selected color: " .. tostring(color)) end
+})
+
+Tabs.ColorPickerTab:Colorpicker({
+    Title = "Background Color",
+    Default = Color3.fromRGB(0, 0, 255),
+    Callback = function(color) print("Background color: " .. tostring(color)) end
+})
+
+
+Tabs.NotificationTab:Button({
+    Title = "Click to get Notified",
+    Callback = function() 
+        WindUI:Notify({
+            Title = "Notification Example",
+            Content = "Content",
+            Icon = "droplet-off",
+            Duration = 5,
+        })
+    end
+})
+
+
+Tabs.ToggleTab:Toggle({
+    Title = "Enable Feature",
+    Default = true,
+    Callback = function(state) print("Feature enabled: " .. tostring(state)) end
+})
+
+Tabs.ToggleTab:Toggle({
+    Title = "Activate Mode",
+    Default = false,
+    Callback = function(state) print("Mode activated: " .. tostring(state)) end
+})
+Tabs.ToggleTab:Toggle({
+    Title = "Toggle with icon",
+    Icon = "check",
+    Default = false,
+    Callback = function(state) print("Toggle with icon activated: " .. tostring(state)) end
+})
+
+
+Tabs.SliderTab:Slider({
+    Title = "Volume Slider",
+    Value = {
+        Min = 0,
+        Max = 100,
+        Default = 50,
+    },
+    Callback = function(value) print("Volume set to: " .. value) end
+})
+
+Tabs.SliderTab:Slider({
+    Title = "Brightness Slider",
+    Value = {
+        Min = 1,
+        Max = 100,
+        Default = 75,
+    },
+    Callback = function(value) print("Brightness set to: " .. value) end
+})
+
+
+Tabs.InputTab:Input({
+    Title = "Username",
+    Default = "Guest",
+    Placeholder = "Enter your username",
+    Callback = function(input) print("Username: " .. input) end
+})
+
+Tabs.InputTab:Input({
+    Title = "Password",
+    Default = "",
+    Placeholder = "Enter your password",
+    Callback = function(input) print("Password entered.") end
+})
+
+
+Tabs.DropdownTab:Dropdown({
+    Title = "Select an Option",
+    Values = { "Option 1", "Option 2", "Option 3" },
+    Value = "Option 1",
+    Callback = function(option) print("Selected: " .. option) end
+})
+
+Tabs.DropdownTab:Dropdown({
+    Title = "Choose a Category",
+    Values = { "Category A", "Category B", "Category C" },
+    Value = "Category A",
+    Callback = function(option) print("Category selected: " .. option) end
+})
+
+
+
+-- Configuration
+
+
+local HttpService = game:GetService("HttpService")
+
+local folderPath = "WindUI"
+makefolder(folderPath)
+
+local function SaveFile(fileName, data)
+    local filePath = folderPath .. "/" .. fileName .. ".json"
+    local jsonData = HttpService:JSONEncode(data)
+    writefile(filePath, jsonData)
+end
+
+local function LoadFile(fileName)
+    local filePath = folderPath .. "/" .. fileName .. ".json"
+    if isfile(filePath) then
+        local jsonData = readfile(filePath)
+        return HttpService:JSONDecode(jsonData)
+    end
+end
+
+local function ListFiles()
+    local files = {}
+    for _, file in ipairs(listfiles(folderPath)) do
+        local fileName = file:match("([^/]+)%.json$")
+        if fileName then
+            table.insert(files, fileName)
+        end
+    end
+    return files
+end
+
+Tabs.WindowTab:Section({ Title = "Window" })
+
+local themeValues = {}
+for name, _ in pairs(WindUI:GetThemes()) do
+    table.insert(themeValues, name)
+end
+
+local themeDropdown = Tabs.WindowTab:Dropdown({
+    Title = "Select Theme",
+    Multi = false,
+    AllowNone = false,
+    Value = nil,
+    Values = themeValues,
+    Callback = function(theme)
+        WindUI:SetTheme(theme)
+    end
+})
+themeDropdown:Select(WindUI:GetCurrentTheme())
+
+local ToggleTransparency = Tabs.WindowTab:Toggle({
+    Title = "Toggle Window Transparency",
+    Callback = function(e)
+        Window:ToggleTransparency(e)
+    end,
+    Value = WindUI:GetTransparency()
+})
+
+Tabs.WindowTab:Section({ Title = "Save" })
+
+local fileNameInput = ""
+Tabs.WindowTab:Input({
+    Title = "Write File Name",
+    PlaceholderText = "Enter file name",
+    Callback = function(text)
+        fileNameInput = text
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Save File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        end
+    end
+})
+
+Tabs.WindowTab:Section({ Title = "Load" })
+
+local filesDropdown
+local files = ListFiles()
+
+filesDropdown = Tabs.WindowTab:Dropdown({
+    Title = "Select File",
+    Multi = false,
+    AllowNone = true,
+    Values = files,
+    Callback = function(selectedFile)
+        fileNameInput = selectedFile
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Load File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            local data = LoadFile(fileNameInput)
+            if data then
+                WindUI:Notify({
+                    Title = "File Loaded",
+                    Content = "Loaded data: " .. HttpService:JSONEncode(data),
+                    Duration = 5,
+                })
+                if data.Transparent then 
+                    Window:ToggleTransparency(data.Transparent)
+                    ToggleTransparency:SetValue(data.Transparent)
+                end
+                if data.Theme then WindUI:SetTheme(data.Theme) end
+            end
+        end
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Overwrite File",
+    Callback = function()
+        if fileNameInput ~= "" then
+            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        end
+    end
+})
+
+Tabs.WindowTab:Button({
+    Title = "Refresh List",
+    Callback = function()
+        filesDropdown:Refresh(ListFiles())
+    end
+})
+
+local currentThemeName = WindUI:GetCurrentTheme()
+local themes = WindUI:GetThemes()
+
+local ThemeAccent = themes[currentThemeName].Accent
+local ThemeOutline = themes[currentThemeName].Outline
+local ThemeText = themes[currentThemeName].Text
+local ThemePlaceholderText = themes[currentThemeName].PlaceholderText
+
+function updateTheme()
+    WindUI:AddTheme({
+        Name = currentThemeName,
+        Accent = ThemeAccent,
+        Outline = ThemeOutline,
+        Text = ThemeText,
+        PlaceholderText = ThemePlaceholderText
+    })
+    WindUI:SetTheme(currentThemeName)
+end
+
+local CreateInput = Tabs.CreateThemeTab:Input({
+    Title = "Theme Name",
+    Value = currentThemeName,
+    Callback = function(name)
+        currentThemeName = name
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Background Color",
+    Default = Color3.fromHex(ThemeAccent),
+    Callback = function(color)
+        ThemeAccent = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Outline Color",
+    Default = Color3.fromHex(ThemeOutline),
+    Callback = function(color)
+        ThemeOutline = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Text Color",
+    Default = Color3.fromHex(ThemeText),
+    Callback = function(color)
+        ThemeText = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Colorpicker({
+    Title = "Placeholder Text Color",
+    Default = Color3.fromHex(ThemePlaceholderText),
+    Callback = function(color)
+        ThemePlaceholderText = color:ToHex()
+    end
+})
+
+Tabs.CreateThemeTab:Button({
+    Title = "Update Theme",
+    Callback = function()
+        updateTheme()
+    end
+})
