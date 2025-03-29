@@ -42,7 +42,6 @@ Window:EditOpenButton({
 local Tabs = {
     ButtonTab = Window:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." }),
     CodeTab = Window:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." }),
-    --ColorPickerTab = Window:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." }), -- Removed
     NotificationTab = Window:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." }),
     ToggleTab = Window:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." }),
     SliderTab = Window:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." }),
@@ -52,10 +51,9 @@ local Tabs = {
     WindowTab = Window:Tab({ Title = "Window and File Configuration", Icon = "settings", Desc = "Manage window settings and file configurations." }),
     CreateThemeTab = Window:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." }),
     be = Window:Divider(),
-    --LongTab = Window:Tab({ Title = "Long and empty tab. Looong and empty.. tab.", Icon = "frown", Desc = "Long Description" }), -- Removed
 }
 
-Window:SelectTab(1)
+Window:SelectTab(1) -- Select the first available tab
 
 Tabs.ButtonTab:Button({
     Title = "Click Me",
@@ -105,19 +103,6 @@ local Window = WindUI:CreateWindow({
     ]],
 })
 
---[[ Removed ColorPickerTab content
-Tabs.ColorPickerTab:Colorpicker({
-    Title = "Pick a Color",
-    Default = Color3.fromRGB(255, 0, 0),
-    Callback = function(color) print("Selected color: " .. tostring(color)) end
-})
-
-Tabs.ColorPickerTab:Colorpicker({
-    Title = "Background Color",
-    Default = Color3.fromRGB(0, 0, 255),
-    Callback = function(color) print("Background color: " .. tostring(color)) end
-})
-]]--
 
 Tabs.NotificationTab:Button({
     Title = "Click to get Notified",
