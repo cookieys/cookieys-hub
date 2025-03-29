@@ -12,7 +12,7 @@ local Window = WindUI:CreateWindow({
     --Background = "rbxassetid://13511292247", -- rbxassetid only
     HasOutline = false,
     -- remove it below if you don't want to use the key system in your script.
-    KeySystem = { 
+    KeySystem = {
         Key = { "1234", "5678" },
         Note = "The Key is '1234' or '5678",
         -- Thumbnail = {
@@ -31,7 +31,7 @@ Window:EditOpenButton({
     CornerRadius = UDim.new(0,10),
     StrokeThickness = 2,
     Color = ColorSequence.new( -- gradient
-        Color3.fromHex("FF0F7B"), 
+        Color3.fromHex("FF0F7B"),
         Color3.fromHex("F89B29")
     ),
     --Enabled = false,
@@ -42,7 +42,7 @@ Window:EditOpenButton({
 local Tabs = {
     ButtonTab = Window:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." }),
     CodeTab = Window:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." }),
-    ColorPickerTab = Window:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." }),
+    --ColorPickerTab = Window:Tab({ Title = "ColorPicker", Icon = "paintbrush", Desc = "Choose and customize colors easily." }), -- Removed
     NotificationTab = Window:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." }),
     ToggleTab = Window:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." }),
     SliderTab = Window:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." }),
@@ -52,7 +52,7 @@ local Tabs = {
     WindowTab = Window:Tab({ Title = "Window and File Configuration", Icon = "settings", Desc = "Manage window settings and file configurations." }),
     CreateThemeTab = Window:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." }),
     be = Window:Divider(),
-    LongTab = Window:Tab({ Title = "Long and empty tab. Looong and empty.. tab.", Icon = "frown", Desc = "Long Description" }),
+    --LongTab = Window:Tab({ Title = "Long and empty tab. Looong and empty.. tab.", Icon = "frown", Desc = "Long Description" }), -- Removed
 }
 
 Window:SelectTab(1)
@@ -105,7 +105,7 @@ local Window = WindUI:CreateWindow({
     ]],
 })
 
-
+--[[ Removed ColorPickerTab content
 Tabs.ColorPickerTab:Colorpicker({
     Title = "Pick a Color",
     Default = Color3.fromRGB(255, 0, 0),
@@ -117,11 +117,11 @@ Tabs.ColorPickerTab:Colorpicker({
     Default = Color3.fromRGB(0, 0, 255),
     Callback = function(color) print("Background color: " .. tostring(color)) end
 })
-
+]]--
 
 Tabs.NotificationTab:Button({
     Title = "Click to get Notified",
-    Callback = function() 
+    Callback = function()
         WindUI:Notify({
             Title = "Notification Example",
             Content = "Content",
@@ -309,7 +309,7 @@ Tabs.WindowTab:Button({
                     Content = "Loaded data: " .. HttpService:JSONEncode(data),
                     Duration = 5,
                 })
-                if data.Transparent then 
+                if data.Transparent then
                     Window:ToggleTransparency(data.Transparent)
                     ToggleTransparency:SetValue(data.Transparent)
                 end
