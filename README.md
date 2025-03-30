@@ -1,7 +1,5 @@
 Made with ♡ by XyraV
 
-open source :)
-
 To use this just execute:
 
 ```lua
