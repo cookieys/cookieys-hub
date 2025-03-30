@@ -5,10 +5,10 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(500, 400), -- Reduced size from 580, 460
     Transparent = true,
     Theme = "Dark",
-    SideBarWidth = 200,
+    SideBarWidth = 180, -- Reduced sidebar width from 200
     --Background = "rbxassetid://13511292247", -- rbxassetid only
     HasOutline = false,
     -- remove it below if you don't want to use the key system in your script.
@@ -40,20 +40,54 @@ Window:EditOpenButton({
 
 
 local Tabs = {
+    HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
     ButtonTab = Window:Tab({ Title = "Button", Icon = "mouse-pointer-2", Desc = "Contains interactive buttons for various actions." }),
     CodeTab = Window:Tab({ Title = "Code", Icon = "code", Desc = "Displays and manages code snippets." }),
     NotificationTab = Window:Tab({ Title = "Notification", Icon = "bell", Desc = "Configure and view notifications." }),
     ToggleTab = Window:Tab({ Title = "Toggle", Icon = "toggle-left", Desc = "Switch settings on and off." }),
-    SliderTab = Window:Tab({ Title = "Slider", Icon = "sliders-horizontal", Desc = "Adjust values smoothly with sliders." }),
-    InputTab = Window:Tab({ Title = "Input", Icon = "keyboard", Desc = "Accept text and numerical input." }),
-    DropdownTab = Window:Tab({ Title = "Dropdown", Icon = "chevrons-up-down", Desc = "Select from multiple options." }),
     b = Window:Divider(),
     WindowTab = Window:Tab({ Title = "Window and File Configuration", Icon = "settings", Desc = "Manage window settings and file configurations." }),
     CreateThemeTab = Window:Tab({ Title = "Create Theme", Icon = "palette", Desc = "Design and apply custom themes." }),
     be = Window:Divider(),
 }
 
-Window:SelectTab(1) -- Select the first available tab
+Window:SelectTab(1) -- Select the Home tab
+
+-- Add elements to the Home Tab
+Tabs.HomeTab:Button({
+    Title = "Discord Invite",
+    Desc = "Click to copy the Discord server invite link.",
+    Callback = function()
+        local discordLink = "https://discord.gg/ee4veXxYFZ"
+        if setclipboard then
+             local success, err = pcall(setclipboard, discordLink)
+             if success then
+                WindUI:Notify({
+                    Title = "Link Copied!",
+                    Content = "Discord invite link copied to clipboard.",
+                    Icon = "clipboard-check", -- Use the requested icon
+                    Duration = 3,
+                })
+            else
+                WindUI:Notify({
+                    Title = "Error",
+                    Content = "Failed to copy link: " .. tostring(err),
+                    Icon = "alert-triangle",
+                    Duration = 5,
+                })
+            end
+        else
+            WindUI:Notify({
+                Title = "Error",
+                Content = "Could not copy link (setclipboard unavailable).",
+                Icon = "alert-triangle",
+                Duration = 5,
+            })
+            warn("setclipboard function not available in this environment.")
+        end
+    end
+})
+
 
 Tabs.ButtonTab:Button({
     Title = "Click Me",
@@ -135,253 +169,310 @@ Tabs.ToggleTab:Toggle({
     Callback = function(state) print("Toggle with icon activated: " .. tostring(state)) end
 })
 
-
-Tabs.SliderTab:Slider({
-    Title = "Volume Slider",
-    Value = {
-        Min = 0,
-        Max = 100,
-        Default = 50,
-    },
-    Callback = function(value) print("Volume set to: " .. value) end
-})
-
-Tabs.SliderTab:Slider({
-    Title = "Brightness Slider",
-    Value = {
-        Min = 1,
-        Max = 100,
-        Default = 75,
-    },
-    Callback = function(value) print("Brightness set to: " .. value) end
-})
-
-
-Tabs.InputTab:Input({
-    Title = "Username",
-    Default = "Guest",
-    Placeholder = "Enter your username",
-    Callback = function(input) print("Username: " .. input) end
-})
-
-Tabs.InputTab:Input({
-    Title = "Password",
-    Default = "",
-    Placeholder = "Enter your password",
-    Callback = function(input) print("Password entered.") end
-})
-
-
-Tabs.DropdownTab:Dropdown({
-    Title = "Select an Option",
-    Values = { "Option 1", "Option 2", "Option 3" },
-    Value = "Option 1",
-    Callback = function(option) print("Selected: " .. option) end
-})
-
-Tabs.DropdownTab:Dropdown({
-    Title = "Choose a Category",
-    Values = { "Category A", "Category B", "Category C" },
-    Value = "Category A",
-    Callback = function(option) print("Category selected: " .. option) end
-})
-
-
-
 -- Configuration
-
 
 local HttpService = game:GetService("HttpService")
 
 local folderPath = "WindUI"
-makefolder(folderPath)
+pcall(makefolder, folderPath) -- Use pcall for safety
 
 local function SaveFile(fileName, data)
     local filePath = folderPath .. "/" .. fileName .. ".json"
-    local jsonData = HttpService:JSONEncode(data)
-    writefile(filePath, jsonData)
+    local success, err = pcall(function()
+        local jsonData = HttpService:JSONEncode(data)
+        writefile(filePath, jsonData)
+    end)
+    if not success then warn("Failed to save file:", err) end
+    return success -- Return success status
 end
 
 local function LoadFile(fileName)
     local filePath = folderPath .. "/" .. fileName .. ".json"
-    if isfile(filePath) then
-        local jsonData = readfile(filePath)
-        return HttpService:JSONDecode(jsonData)
+    if isfile and isfile(filePath) then -- Check if isfile exists
+        local success, result = pcall(function()
+             local jsonData = readfile(filePath)
+             return HttpService:JSONDecode(jsonData)
+        end)
+        if success then
+            return result
+        else
+            warn("Failed to load or decode file:", result)
+            return nil
+        end
     end
+    return nil
 end
 
 local function ListFiles()
     local files = {}
-    for _, file in ipairs(listfiles(folderPath)) do
-        local fileName = file:match("([^/]+)%.json$")
-        if fileName then
-            table.insert(files, fileName)
+    if not listfiles or not isfolder then return files end -- Check if functions exist
+    local success, result = pcall(function()
+        if not isfolder(folderPath) then makefolder(folderPath) end -- Ensure folder exists
+        local fileList = listfiles(folderPath)
+        if not fileList then return end
+        for _, file in ipairs(fileList) do
+            local fileName = file:match("([^/]+)%.json$")
+            if fileName then
+                table.insert(files, fileName)
+            end
         end
-    end
+    end)
+    if not success then warn("Failed to list files:", result) end
     return files
 end
 
 Tabs.WindowTab:Section({ Title = "Window" })
 
 local themeValues = {}
-for name, _ in pairs(WindUI:GetThemes()) do
-    table.insert(themeValues, name)
+local successThemes, themesResult = pcall(WindUI.GetThemes, WindUI)
+if successThemes and type(themesResult) == "table" then
+    for name, _ in pairs(themesResult) do
+        table.insert(themeValues, name)
+    end
+else
+    warn("Failed to get themes:", themesResult)
+    themeValues = {"Dark", "Light"} -- Fallback if GetThemes fails
 end
+
+local currentThemeName = WindUI:GetCurrentTheme() or "Dark" -- Fallback theme
 
 local themeDropdown = Tabs.WindowTab:Dropdown({
     Title = "Select Theme",
     Multi = false,
     AllowNone = false,
-    Value = nil,
+    Value = currentThemeName,
     Values = themeValues,
     Callback = function(theme)
-        WindUI:SetTheme(theme)
+        local successSetTheme, errSetTheme = pcall(WindUI.SetTheme, WindUI, theme)
+        if not successSetTheme then warn("Failed to set theme:", errSetTheme) end
     end
 })
-themeDropdown:Select(WindUI:GetCurrentTheme())
+--themeDropdown:Select(currentThemeName) -- Value parameter handles initial selection
 
 local ToggleTransparency = Tabs.WindowTab:Toggle({
-    Title = "Toggle Window Transparency",
+    Title = "Window Transparency",
     Callback = function(e)
-        Window:ToggleTransparency(e)
+        local successToggle, errToggle = pcall(Window.ToggleTransparency, Window, e)
+        if not successToggle then warn("Failed to toggle transparency:", errToggle) end
     end,
-    Value = WindUI:GetTransparency()
+    Default = WindUI:GetTransparency() or false -- Use Default and provide fallback
 })
 
-Tabs.WindowTab:Section({ Title = "Save" })
+Tabs.WindowTab:Section({ Title = "Save Configuration" })
 
 local fileNameInput = ""
 Tabs.WindowTab:Input({
-    Title = "Write File Name",
-    PlaceholderText = "Enter file name",
+    Title = "Config Name",
+    PlaceholderText = "Enter config name",
+    Default = "", -- Ensure default is empty string
     Callback = function(text)
         fileNameInput = text
     end
 })
 
 Tabs.WindowTab:Button({
-    Title = "Save File",
+    Title = "Save Config",
     Callback = function()
-        if fileNameInput ~= "" then
-            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        if fileNameInput and fileNameInput:gsub("%s+", "") ~= "" then -- Check if not nil or empty/whitespace
+            local success = SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+            if success then
+                WindUI:Notify({ Title = "Saved", Content = "'" .. fileNameInput .. "' saved.", Icon="save", Duration = 3 })
+                 -- Refresh file list after saving
+                 local newFiles = ListFiles()
+                 pcall(filesDropdown.Refresh, filesDropdown, newFiles)
+            else
+                WindUI:Notify({ Title = "Error", Content = "Failed to save '" .. fileNameInput .. "'.", Icon="alert-triangle", Duration = 3 })
+            end
+        else
+             WindUI:Notify({ Title = "Error", Content = "Please enter a valid file name.", Icon="alert-triangle", Duration = 3 })
         end
     end
 })
 
-Tabs.WindowTab:Section({ Title = "Load" })
+Tabs.WindowTab:Section({ Title = "Load Configuration" })
 
-local filesDropdown
 local files = ListFiles()
+local selectedFileToLoad = nil
 
-filesDropdown = Tabs.WindowTab:Dropdown({
-    Title = "Select File",
+local filesDropdown = Tabs.WindowTab:Dropdown({
+    Title = "Select Config",
     Multi = false,
-    AllowNone = true,
+    AllowNone = true, -- Allow deselecting
     Values = files,
     Callback = function(selectedFile)
-        fileNameInput = selectedFile
+        -- If selectedFile is an empty table (occurs when deselecting), treat as nil
+        if type(selectedFile) == "table" and next(selectedFile) == nil then
+            selectedFileToLoad = nil
+        else
+            selectedFileToLoad = selectedFile
+        end
     end
 })
 
 Tabs.WindowTab:Button({
-    Title = "Load File",
+    Title = "Load Config",
     Callback = function()
-        if fileNameInput ~= "" then
-            local data = LoadFile(fileNameInput)
+        if selectedFileToLoad and selectedFileToLoad ~= "" then
+            local data = LoadFile(selectedFileToLoad)
             if data then
                 WindUI:Notify({
-                    Title = "File Loaded",
-                    Content = "Loaded data: " .. HttpService:JSONEncode(data),
-                    Duration = 5,
+                    Title = "Config Loaded",
+                    Content = "'"..selectedFileToLoad.."' loaded.",
+                    Icon = "folder-open",
+                    Duration = 3,
                 })
-                if data.Transparent then
-                    Window:ToggleTransparency(data.Transparent)
-                    ToggleTransparency:SetValue(data.Transparent)
+                -- Apply transparency setting
+                if data.Transparent ~= nil then
+                    pcall(Window.ToggleTransparency, Window, data.Transparent)
+                    pcall(ToggleTransparency.SetValue, ToggleTransparency, data.Transparent)
                 end
-                if data.Theme then WindUI:SetTheme(data.Theme) end
+                -- Apply theme setting
+                if data.Theme and type(data.Theme) == "string" then
+                   local successSetTheme, errSetTheme = pcall(WindUI.SetTheme, WindUI, data.Theme)
+                   if successSetTheme then
+                       currentThemeName = data.Theme -- Update the current theme name tracker
+                       pcall(themeDropdown.Select, themeDropdown, data.Theme)
+                   else
+                       warn("Failed to set theme from file:", errSetTheme)
+                       WindUI:Notify({ Title = "Warning", Content = "Could not apply theme '"..data.Theme.."' from config.", Icon="alert-circle", Duration = 4 })
+                   end
+                end
+            else
+                 WindUI:Notify({ Title = "Error", Content = "Failed to load '"..selectedFileToLoad.."'.", Icon="alert-triangle", Duration = 3 })
             end
+        else
+             WindUI:Notify({ Title = "Error", Content = "Please select a config to load.", Icon="alert-triangle", Duration = 3 })
         end
     end
 })
 
 Tabs.WindowTab:Button({
-    Title = "Overwrite File",
+    Title = "Overwrite Config",
     Callback = function()
-        if fileNameInput ~= "" then
-            SaveFile(fileNameInput, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+        if selectedFileToLoad and selectedFileToLoad ~= "" then
+           local success = SaveFile(selectedFileToLoad, { Transparent = WindUI:GetTransparency(), Theme = WindUI:GetCurrentTheme() })
+            if success then
+                WindUI:Notify({ Title = "Overwritten", Content = "'" .. selectedFileToLoad .. "' overwritten.", Icon="save", Duration = 3 })
+            else
+                WindUI:Notify({ Title = "Error", Content = "Failed to overwrite '"..selectedFileToLoad.."'.", Icon="alert-triangle", Duration = 3 })
+            end
+        else
+             WindUI:Notify({ Title = "Error", Content = "Please select a config to overwrite.", Icon="alert-triangle", Duration = 3 })
         end
     end
 })
 
 Tabs.WindowTab:Button({
-    Title = "Refresh List",
+    Title = "Refresh Config List",
     Callback = function()
-        filesDropdown:Refresh(ListFiles())
+        local newFiles = ListFiles()
+        local successRefresh, errRefresh = pcall(filesDropdown.Refresh, filesDropdown, newFiles)
+        if not successRefresh then
+            warn("Failed to refresh file list:", errRefresh)
+            WindUI:Notify({Title="Error", Content="Could not refresh list.", Icon="alert-triangle", Duration=3})
+        else
+             WindUI:Notify({Title="Refreshed", Content="Config list updated.", Icon="refresh-cw", Duration=2})
+             selectedFileToLoad = nil -- Reset selection after refresh
+        end
     end
 })
 
-local currentThemeName = WindUI:GetCurrentTheme()
-local themes = WindUI:GetThemes()
+-- Theme Creation Tab Logic
+local themeCreationName = currentThemeName
+local themesCache = WindUI:GetThemes() or {}
+local currentThemeData = themesCache[currentThemeName] or { Accent = "#8A2BE2", Outline = "#1C1C1C", Text = "#FFFFFF", PlaceholderText = "#A9A9A9" } -- Default theme values (example: Purple/Dark)
 
-local ThemeAccent = themes[currentThemeName].Accent
-local ThemeOutline = themes[currentThemeName].Outline
-local ThemeText = themes[currentThemeName].Text
-local ThemePlaceholderText = themes[currentThemeName].PlaceholderText
+local themeAccentColor = Color3.fromHex(currentThemeData.Accent)
+local themeOutlineColor = Color3.fromHex(currentThemeData.Outline)
+local themeTextColor = Color3.fromHex(currentThemeData.Text)
+local themePlaceholderColor = Color3.fromHex(currentThemeData.PlaceholderText)
 
-function updateTheme()
-    WindUI:AddTheme({
-        Name = currentThemeName,
-        Accent = ThemeAccent,
-        Outline = ThemeOutline,
-        Text = ThemeText,
-        PlaceholderText = ThemePlaceholderText
-    })
-    WindUI:SetTheme(currentThemeName)
+local themeNameInputRef -- Reference to the input field
+
+local function updateThemeFunction()
+    if not themeCreationName or themeCreationName:gsub("%s+", "") == "" then
+        WindUI:Notify({ Title = "Theme Error", Content = "Theme name cannot be empty.", Icon="alert-triangle", Duration = 3 })
+        return
+    end
+
+    local themeData = {
+        Name = themeCreationName,
+        Accent = themeAccentColor:ToHex(),
+        Outline = themeOutlineColor:ToHex(),
+        Text = themeTextColor:ToHex(),
+        PlaceholderText = themePlaceholderColor:ToHex()
+    }
+
+    local successAdd, errAdd = pcall(WindUI.AddTheme, WindUI, themeData)
+    if not successAdd then
+        warn("Failed to add/update theme:", errAdd)
+        WindUI:Notify({ Title = "Theme Error", Content = "Could not update theme.", Icon="alert-triangle", Duration = 3 })
+        return
+    end
+
+    local successSet, errSet = pcall(WindUI.SetTheme, WindUI, themeCreationName)
+    if not successSet then
+        warn("Failed to set new theme:", errSet)
+         WindUI:Notify({ Title = "Theme Error", Content = "Could not apply updated theme.", Icon="alert-triangle", Duration = 3 })
+    else
+         currentThemeName = themeCreationName -- Update the global tracker
+         WindUI:Notify({ Title = "Theme Updated", Content = "'"..themeCreationName.."' updated and applied.", Icon="palette", Duration = 3 })
+         -- Refresh theme dropdown in Window tab
+         local newThemeValues = {}
+         local updatedThemes = WindUI:GetThemes() or {}
+         for name, _ in pairs(updatedThemes) do table.insert(newThemeValues, name) end
+         pcall(themeDropdown.Refresh, themeDropdown, newThemeValues)
+         pcall(themeDropdown.Select, themeDropdown, themeCreationName) -- Select the newly updated/created theme
+    end
 end
 
-local CreateInput = Tabs.CreateThemeTab:Input({
+themeNameInputRef = Tabs.CreateThemeTab:Input({
     Title = "Theme Name",
-    Value = currentThemeName,
+    PlaceholderText = "Enter new or existing theme name",
+    Default = themeCreationName, -- Use Default for initial value
     Callback = function(name)
-        currentThemeName = name
+        themeCreationName = name
     end
 })
 
 Tabs.CreateThemeTab:Colorpicker({
-    Title = "Background Color",
-    Default = Color3.fromHex(ThemeAccent),
+    Title = "Accent Color",
+    Desc = "Backgrounds, highlights",
+    Default = themeAccentColor,
     Callback = function(color)
-        ThemeAccent = color:ToHex()
+        themeAccentColor = color
     end
 })
 
 Tabs.CreateThemeTab:Colorpicker({
     Title = "Outline Color",
-    Default = Color3.fromHex(ThemeOutline),
+    Desc = "Borders, separators",
+    Default = themeOutlineColor,
     Callback = function(color)
-        ThemeOutline = color:ToHex()
+        themeOutlineColor = color
     end
 })
 
 Tabs.CreateThemeTab:Colorpicker({
     Title = "Text Color",
-    Default = Color3.fromHex(ThemeText),
+    Desc = "Primary text elements",
+    Default = themeTextColor,
     Callback = function(color)
-        ThemeText = color:ToHex()
+        themeTextColor = color
     end
 })
 
 Tabs.CreateThemeTab:Colorpicker({
     Title = "Placeholder Text Color",
-    Default = Color3.fromHex(ThemePlaceholderText),
+    Desc = "Input field hints",
+    Default = themePlaceholderColor,
     Callback = function(color)
-        ThemePlaceholderText = color:ToHex()
+        themePlaceholderColor = color
     end
 })
 
 Tabs.CreateThemeTab:Button({
-    Title = "Update Theme",
-    Callback = function()
-        updateTheme()
-    end
+    Title = "Update / Create Theme",
+    Desc = "Saves and applies the current theme settings.",
+    Callback = updateThemeFunction
 })
