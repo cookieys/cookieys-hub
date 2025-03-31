@@ -15,10 +15,10 @@ _G.AutoFarm = false
 
 -- UI Setup
 local Window = WindUI:CreateWindow({
-    Title = "cookieys hub | Fish Sim",
+    Title = "cookieys hub | fisch",
     Icon = "fish", -- Changed Icon
     Author = "XyraV",
-    Folder = "cookieys_fishsim", -- Changed Folder
+    Folder = "cookieys_fisch", -- Changed Folder
     Size = UDim2.fromOffset(500, 400),
     Transparent = true,
     Theme = "Dark",
