@@ -21,7 +21,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(500, 450), -- Increased height slightly for new elements
+    Size = UDim2.fromOffset(500, 500), -- Increased height further for new toggle
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -48,7 +48,7 @@ Window:EditOpenButton({
 
 local Tabs = {
     HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
-    MainTab = Window:Tab({ Title = "main", Icon = "box" }) -- Added the new "main" tab
+    MainTab = Window:Tab({ Title = "main", Icon = "box" })
 }
 
 Window:SelectTab(1) -- Selects the first tab (HomeTab) by default
@@ -91,9 +91,10 @@ Tabs.HomeTab:Button({
 local variables = {
     isAutoShaking = false,
     isAutoCasting = false,
-    isAutoReeling = false, -- Changed from isAutoCatch
-    isInstantReelingToggle = false, -- Renamed from isInstantReeling for clarity
-    reelingMethod = "Safe Reeling Perfect" -- Added reelingMethod
+    isAutoReeling = false,
+    isInstantReelingToggle = false, -- Kept from previous version, might be redundant depending on desired behavior
+    reelingMethod = "Safe Reeling Perfect",
+    isFishing = false -- Added for the new Instant Reel function toggle
 }
 
 -- Placeholder function for auto-shaking logic
@@ -105,11 +106,9 @@ local function autoShakeLogic()
             local button = safezone:FindFirstChild("button")
             if button and button:IsA("GuiButton") then
                  pcall(function() button.MouseButton1Click:Fire() end)
-                 -- or pcall(function() button.Activated:Fire() end)
             end
         end
     end
-    --print("Auto-shaking...")
 end
 
 -- Placeholder function for centering the shake button
@@ -117,22 +116,19 @@ local function centerButton(button)
      if button and button:IsA("GuiObject") then
          button.AnchorPoint = Vector2.new(0.5, 0.5)
          button.Position = UDim2.new(0.5, 0, 0.5, 0)
-         --print("Centering button:", button.Name)
      end
 end
 
--- Placeholder functions for reeling (replace with actual implementation)
+-- Placeholder functions for reeling (replace with actual implementation if needed for RenderStepped approach)
 local function syncPositions()
     --print("Executing Safe Reeling Perfect...")
-    -- Add your safe reeling logic here
+    -- Add your safe reeling logic here if using the RenderStepped method
 end
 
 local function startCatching(isInstant)
     if isInstant then
         --print("Executing Instant Perfect Reeling...")
-        -- Add your instant reeling logic here
-    else
-        -- Add non-instant catching logic if needed elsewhere
+        -- Add your instant reeling logic here if using the RenderStepped method
     end
 end
 
@@ -146,10 +142,9 @@ Tabs.MainTab:Toggle({
         if value then
             task.spawn(function()
                 while variables.isAutoShaking and task.wait(0.000000000000000000000000000000000001) do
-                    pcall(autoShakeLogic) -- Wrap in pcall to prevent errors stopping the loop
+                    pcall(autoShakeLogic)
                 end
             end)
-            -- Attempt to center button immediately if UI exists
             local shakeUI = PlayerGui:FindFirstChild("shakeui")
             if shakeUI then
                 local safezone = shakeUI:FindFirstChild("safezone")
@@ -171,57 +166,100 @@ Tabs.MainTab:Toggle({
     Callback = function(value)
         variables.isAutoCasting = value
         print("Auto Cast Toggled:", value)
-        -- Placeholder: Add logic for Auto Cast here
         if value then
-            -- Start auto casting loop/logic
             print("Auto Casting Started")
         else
-            -- Stop auto casting loop/logic
             print("Auto Casting Stopped")
         end
     end
 })
 
--- Add Auto Reel toggle (using the name from the snippet)
+-- Add Auto Reel toggle (Controls RenderStepped reeling)
 Tabs.MainTab:Toggle({
-    Title = "Auto Reel",
+    Title = "Auto Reel (RenderStepped)", -- Clarified title
     Default = false,
     Callback = function(value)
-        variables.isAutoReeling = value -- Controls the activation of reeling logic
-        print("Auto Reel Toggled:", value)
+        variables.isAutoReeling = value
+        print("Auto Reel (RenderStepped) Toggled:", value)
     end
 })
 
--- Add Reeling Method Dropdown
+-- Add Reeling Method Dropdown (For RenderStepped reeling)
 Tabs.MainTab:Dropdown({
-    Title = "Reeling Method",
+    Title = "Reeling Method (RenderStepped)", -- Clarified title
     Values = {"Safe Reeling Perfect", "Instant Perfect"},
     Multi = false,
-    Default = variables.reelingMethod, -- Use the variable default
+    Default = variables.reelingMethod,
     Callback = function(value)
         variables.reelingMethod = value
         print("Reeling Method Set To:", value)
     end
 })
 
-
--- Add Instant Reel toggle (separate toggle, as the original snippet seemed to imply)
--- Note: This might be redundant if "Instant Perfect" in the dropdown handles it.
--- If you want the dropdown *only* to control the method, remove this toggle.
--- If you want this toggle to *enable* the possibility of instant reeling chosen by the dropdown, keep it.
--- Based on the RunService loop provided, the dropdown *alone* determines the method.
--- Renaming the variable `isInstantReeling` to `isInstantReelingToggle` to avoid confusion.
+-- Add Instant Reel Toggle (Implements the new periodic re-equip logic)
 Tabs.MainTab:Toggle({
-    Title = "Instant Reel (Toggle)", -- Clarified title
+    Title = "Instant Reel (Re-Equip)", -- Clarified title
+    Desc = "Periodically destroys reel UI & re-equips rod.", -- Updated Description
     Default = false,
     Callback = function(value)
-        variables.isInstantReelingToggle = value
-        print("Instant Reel Toggle Toggled:", value)
-        -- Placeholder: Maybe enable/disable hooks or modifications needed for instant reeling
+        variables.isFishing = value
+        print("Instant Reel (Re-Equip) Toggled:", value)
         if value then
-             print("Instant Reel Toggle Enabled - Modifications Active")
-        else
-            print("Instant Reel Toggle Disabled - Modifications Inactive")
+            task.spawn(function()
+                while variables.isFishing and task.wait(2) do -- Check variables.isFishing in the loop condition
+                    -- Safely get rod name using pcall or chained checks
+                    local rodNameValue = nil
+                    pcall(function()
+                        local playerStats = workspace:FindFirstChild("PlayerStats")
+                        if playerStats then
+                            local playerFolder = playerStats:FindFirstChild(LocalPlayer.Name)
+                            if playerFolder then
+                                local tFolder = playerFolder:FindFirstChild("T")
+                                if tFolder then
+                                     local innerPlayerFolder = tFolder:FindFirstChild(LocalPlayer.Name)
+                                     if innerPlayerFolder then
+                                         local statsFolder = innerPlayerFolder:FindFirstChild("Stats")
+                                         if statsFolder then
+                                             local rodValue = statsFolder:FindFirstChild("rod")
+                                             if rodValue then
+                                                 rodNameValue = rodValue.Value
+                                             end
+                                         end
+                                     end
+                                end
+                            end
+                        end
+                    end)
+                    local finalRodName = rodNameValue or "Training Rod" -- Default if not found
+
+                    -- Find and destroy reel UI
+                    local reel = PlayerGui:FindFirstChild("reel")
+                    if reel then
+                        pcall(function() reel:Destroy() end)
+                        --print("Destroyed reel UI")
+                    end
+
+                    -- Re-equip tool (ensure Character and Humanoid exist)
+                    if Character and Character:FindFirstChild("Humanoid") then
+                        local humanoid = Character.Humanoid
+                        local currentTool = humanoid:FindFirstChildOfClass("Tool")
+                        local toolToEquip = Backpack:FindFirstChild(finalRodName)
+
+                        -- Only re-equip if necessary or if the correct tool isn't already equipped
+                        if toolToEquip and (not currentTool or currentTool.Name ~= finalRodName) then
+                             pcall(function() humanoid:UnequipTools() end)
+                             task.wait(0.05) -- Small delay might help
+                             pcall(function() humanoid:EquipTool(toolToEquip) end)
+                             --print("Re-equipped:", finalRodName)
+                        elseif not toolToEquip then
+                            warn("Could not find rod to equip:", finalRodName)
+                        end
+                    end
+                    -- Added check to exit loop if toggle is turned off during the wait
+                    if not variables.isFishing then break end
+                end
+                print("Instant Reel (Re-Equip) loop stopped.")
+            end)
         end
     end
 })
@@ -230,31 +268,29 @@ Tabs.MainTab:Toggle({
 -- Connect the ChildAdded event (Primarily for Auto Shake button centering)
 PlayerGui.ChildAdded:Connect(function(child)
     if child.Name == "shakeui" and variables.isAutoShaking then
-        task.spawn(function() -- Use task.spawn to avoid yielding
+        task.spawn(function()
             local safezone = child:WaitForChild("safezone", 5)
             if safezone then
                 local button = safezone:FindFirstChild("button")
                 if button then
-                    pcall(centerButton, button) -- Center existing button if found immediately
+                    pcall(centerButton, button)
                 end
-                -- Connect to future buttons added to this specific safezone
                 local connection
                 connection = safezone.ChildAdded:Connect(function(newChild)
-                    if newChild.Name == "button" and variables.isAutoShaking then -- Check again if still active
+                    if newChild.Name == "button" and variables.isAutoShaking then
                         pcall(centerButton, newChild)
                     elseif not variables.isAutoShaking and connection then
-                        connection:Disconnect() -- Disconnect if auto shake is turned off
+                        connection:Disconnect()
                         connection = nil
                     end
                 end)
-                -- Also disconnect if the main toggle is turned off later
                 local checkConnection
-                if RunService:IsClient() then -- Ensure RunService connections are only on client
+                if RunService:IsClient() then
                     checkConnection = RunService.Heartbeat:Connect(function()
                         if not variables.isAutoShaking and connection then
-                            connection:Disconnect()
+                            if connection then connection:Disconnect() end
                             connection = nil
-                            if checkConnection then checkConnection:Disconnect() end -- Stop checking
+                            if checkConnection then checkConnection:Disconnect() end
                         end
                     end)
                 end
@@ -263,20 +299,18 @@ PlayerGui.ChildAdded:Connect(function(child)
     end
 end)
 
--- RenderStepped loop for Auto Reeling based on the toggle and dropdown
+-- RenderStepped loop for Auto Reeling based on the *first* Auto Reel toggle and dropdown
 if RunService:IsClient() then
     RunService.RenderStepped:Connect(function()
-        if variables.isAutoReeling then -- Check if Auto Reel toggle is ON
+        -- Logic for the RenderStepped-based Auto Reel
+        if variables.isAutoReeling then
             if variables.reelingMethod == "Safe Reeling Perfect" then
                 pcall(syncPositions)
             elseif variables.reelingMethod == "Instant Perfect" then
-                 -- Optionally, you could also check variables.isInstantReelingToggle here
-                 -- if you want the separate toggle to act as an additional requirement.
-                 -- Example: if variables.reelingMethod == "Instant Perfect" and variables.isInstantReelingToggle then
-                pcall(startCatching, true) -- Pass true for instant
+                pcall(startCatching, true)
             end
         end
 
-        -- Add other RenderStepped logic here if needed (e.g., for Auto Cast if it requires per-frame checks)
+        -- Add other RenderStepped logic here if needed
     end)
 end
