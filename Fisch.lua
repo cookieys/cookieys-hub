@@ -21,7 +21,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(500, 500),
+    Size = UDim2.fromOffset(500, 450), -- Slightly reduced height after removing a toggle
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -89,11 +89,11 @@ Tabs.HomeTab:Button({
 
 -- Variables to store toggle states and settings
 local variables = {
-    isAutoClicking = false,     -- Renamed from isAutoShaking
-    autoCastEnabled = false,    -- Renamed from isAutoCasting
-    isAutoCatch = false,        -- Renamed from isAutoReeling
+    isAutoClicking = false,
+    autoCastEnabled = false,
+    isAutoCatch = false,
     reelingMethod = "Safe Reeling Perfect",
-    isFishing = false           -- For the re-equip toggle
+    -- isFishing variable removed as the toggle is gone
 }
 
 -- ===== FUNCTIONS =====
@@ -111,12 +111,11 @@ local function click_this_gui(to_click)
 end
 
 local function centerButton(button)
-     -- Apply centering and resizing ONLY if auto clicking is on
      if variables.isAutoClicking and button and button:IsA("ImageButton") then
          pcall(function()
              button.AnchorPoint = Vector2.new(0.5, 0.5)
              button.Position = UDim2.new(0.5, 0, 0.5, 0)
-             button.Size = UDim2.new(0, 100, 0, 100) -- Example size, adjust if needed
+             button.Size = UDim2.new(0, 100, 0, 100)
          end)
      end
 end
@@ -127,7 +126,7 @@ local function autoClick()
     local safezone = shakeUI:FindFirstChild("safezone")
     if not safezone then return end
     local button = safezone:FindFirstChild("button")
-    if button and button:IsA("ImageButton") and variables.isAutoClicking then -- Check the variable here too
+    if button and button:IsA("ImageButton") and variables.isAutoClicking then
         click_this_gui(button)
     end
 end
@@ -135,7 +134,6 @@ end
 local function getEquippedRod()
     if not Character then return nil end
     local tool = Character:FindFirstChildWhichIsA("Tool")
-    -- Check if the tool name contains "rod" case-insensitively
     return tool and tool.Name:lower():find("rod") and tool
 end
 
@@ -145,31 +143,28 @@ local function equipRod()
         if tool:IsA("Tool") and tool.Name:lower():find("rod") then
             local eventsFolder = tool:FindFirstChild("events")
             if eventsFolder and eventsFolder:FindFirstChild("reset") then
-                pcall(function() eventsFolder.reset:FireServer() end) -- Try firing reset
+                pcall(function() eventsFolder.reset:FireServer() end)
             end
 
             if Character and Character:FindFirstChildOfClass("Humanoid") then
                 local humanoid = Character.Humanoid
                 local currentTool = humanoid:FindFirstChildOfClass("Tool")
 
-                -- Unequip if a tool is held, then equip the found rod
                 if currentTool then
                     pcall(function() humanoid:UnequipTools() end)
-                    task.wait(0.05) -- Brief delay
+                    task.wait(0.05)
                 end
                 pcall(function() humanoid:EquipTool(tool) end)
                 rodFound = true
-                --print("Equipped:", tool.Name)
-                break -- Exit loop once a rod is equipped
+                break
             end
         end
     end
     if not rodFound then
-        -- Use WindUI:Notify directly
         WindUI:Notify({
             Title = "Equip Error",
             Content = "No rod found in backpack!",
-            Icon = "alert-triangle", -- Optional: Add an appropriate icon
+            Icon = "alert-triangle",
             Duration = 3
         })
     end
@@ -180,7 +175,7 @@ end
 local autoCastThread = nil
 local function autoCast()
     local castArgs = { [1] = 99.79999999999994, [2] = 1 }
-    while variables.autoCastEnabled and task.wait(0.01) do -- Loop controlled by variable
+    while variables.autoCastEnabled and task.wait(0.01) do
         local rod = getEquippedRod()
         if rod then
             local eventsFolder = rod:FindFirstChild("events")
@@ -188,15 +183,15 @@ local function autoCast()
                  pcall(function() eventsFolder.cast:FireServer(unpack(castArgs)) end)
             end
         else
-             -- Optional: If no rod equipped, try equipping one. Be mindful of potential spam.
+             -- Optionally try to equip if none is held
              -- equipRod()
-             -- task.wait(0.5) -- Wait a bit after trying to equip
+             -- task.wait(0.5)
         end
     end
 end
 
 local function startCatching(perfect)
-    if not variables.isAutoCatch then return end -- Check variable state
+    if not variables.isAutoCatch then return end
 
     local reel = PlayerGui:FindFirstChild("reel")
     if not reel then return end
@@ -205,10 +200,10 @@ local function startCatching(perfect)
 
     local events = ReplicatedStorage:FindFirstChild("events")
     if not events then return end
-    local reelfinished = events:FindFirstChild("reelfinished ") -- Note the space in the name
+    local reelfinished = events:FindFirstChild("reelfinished ")
     if reelfinished then
         pcall(function()
-            reelfinished:FireServer(100, perfect) -- Fire event
+            reelfinished:FireServer(100, perfect)
         end)
     else
         warn("reelfinished event not found!")
@@ -216,7 +211,7 @@ local function startCatching(perfect)
 end
 
 local function syncPositions()
-    if not variables.isAutoCatch then return end -- Check variable state
+    if not variables.isAutoCatch then return end
 
     local reel = PlayerGui:FindFirstChild("reel")
     if not reel then return end
@@ -237,26 +232,25 @@ end
 
 -- Add the Auto Click toggle to the MainTab
 Tabs.MainTab:Toggle({
-    Title = "Auto Click (Shake)", -- Updated Title
+    Title = "Auto Click (Shake)",
     Default = false,
     Callback = function(value)
         variables.isAutoClicking = value
         print("Auto Click Toggled:", value)
         if value then
             task.spawn(function()
-                while variables.isAutoClicking and task.wait(0.000000000000000000000000000000000001) do -- Use new variable
-                    pcall(autoClick) -- Wrap in pcall for safety
+                while variables.isAutoClicking and task.wait(0.000000000000000000000000000000000001) do
+                    pcall(autoClick)
                 end
                 print("Auto Click loop stopped.")
             end)
-            -- Attempt to center button immediately if UI exists
              local shakeUI = PlayerGui:FindFirstChild("shakeui")
              if shakeUI then
                  local safezone = shakeUI:FindFirstChild("safezone")
                  if safezone then
                      local button = safezone:FindFirstChild("button")
                      if button then
-                        centerButton(button) -- Use new function
+                        centerButton(button)
                      end
                  end
              end
@@ -269,15 +263,14 @@ Tabs.MainTab:Toggle({
     Title = "Auto Cast",
     Default = false,
     Callback = function(value)
-        variables.autoCastEnabled = value -- Use new variable
+        variables.autoCastEnabled = value
         print("Auto Cast Toggled:", value)
         if value then
             if not autoCastThread or coroutine.status(autoCastThread) == "dead" then
-                autoCastThread = task.spawn(autoCast) -- Start the casting loop
+                autoCastThread = task.spawn(autoCast)
                 print("Auto Casting Started")
             end
         else
-            -- The loop inside autoCast will stop itself based on the variable
             print("Auto Casting Stopped (will cease on next check)")
         end
     end
@@ -285,17 +278,17 @@ Tabs.MainTab:Toggle({
 
 -- Add Auto Catch toggle (Controls RenderStepped reeling)
 Tabs.MainTab:Toggle({
-    Title = "Auto Catch (RenderStepped)", -- Clarified title
+    Title = "Auto Catch (RenderStepped)",
     Default = false,
     Callback = function(value)
-        variables.isAutoCatch = value -- Use new variable
+        variables.isAutoCatch = value
         print("Auto Catch (RenderStepped) Toggled:", value)
     end
 })
 
 -- Add Reeling Method Dropdown (For RenderStepped reeling)
 Tabs.MainTab:Dropdown({
-    Title = "Catching Method (RenderStepped)", -- Clarified title
+    Title = "Catching Method (RenderStepped)",
     Values = {"Safe Reeling Perfect", "Instant Perfect"},
     Multi = false,
     Default = variables.reelingMethod,
@@ -305,63 +298,38 @@ Tabs.MainTab:Dropdown({
     end
 })
 
--- Add Instant Reel Toggle (Implements the new periodic re-equip logic)
+--[[ Removed Instant Reel (Re-Equip) Toggle
 Tabs.MainTab:Toggle({
     Title = "Instant Reel (Re-Equip)",
-    Desc = "Periodically re-equips rod.", -- Updated Description
+    Desc = "Periodically re-equips rod.",
     Default = false,
     Callback = function(value)
-        variables.isFishing = value
-        print("Instant Reel (Re-Equip) Toggled:", value)
-        if value then
-            task.spawn(function()
-                while variables.isFishing and task.wait(2) do -- Check variables.isFishing
-                    -- Find and destroy reel UI (still useful to ensure it closes)
-                    local reel = PlayerGui:FindFirstChild("reel")
-                    if reel then
-                        pcall(function() reel:Destroy() end)
-                        --print("Destroyed reel UI")
-                    end
-
-                    -- Use the new equipRod function
-                    pcall(equipRod) -- Wrap in pcall
-
-                    -- Added check to exit loop if toggle is turned off during the wait
-                    if not variables.isFishing then break end
-                end
-                print("Instant Reel (Re-Equip) loop stopped.")
-            end)
-        end
+        -- Removed functionality
     end
 })
-
+]]
 
 -- Connect the ChildAdded event (For Auto Click button centering)
 PlayerGui.ChildAdded:Connect(function(child)
-    if child.Name == "shakeui" and variables.isAutoClicking then -- Check correct variable
+    if child.Name == "shakeui" and variables.isAutoClicking then
         task.spawn(function()
-            -- Wait for safezone with a timeout
             local safezone = child:WaitForChild("safezone", 5)
             if safezone then
-                -- Try finding the button immediately
                 local button = safezone:FindFirstChild("button")
                 if button then
-                    centerButton(button) -- Call new center function immediately
+                    centerButton(button)
                 end
 
-                -- Also connect to ChildAdded on safezone in case button appears later
                 local connection
                 connection = safezone.ChildAdded:Connect(function(newChild)
                     if newChild.Name == "button" and variables.isAutoClicking then
-                        centerButton(newChild) -- Use new function
+                        centerButton(newChild)
                     end
                 end)
 
-                -- Setup cleanup mechanism using Heartbeat
                 local checkConnection
                 if RunService:IsClient() then
                     checkConnection = RunService.Heartbeat:Connect(function()
-                        -- Disconnect if auto clicking stops OR if safezone is gone
                         if not variables.isAutoClicking or not safezone or not safezone.Parent then
                             if connection then connection:Disconnect(); connection = nil end
                             if checkConnection then checkConnection:Disconnect(); checkConnection = nil end
@@ -376,12 +344,11 @@ end)
 -- RenderStepped loop for Auto Catching based on the Auto Catch toggle and dropdown
 if RunService:IsClient() then
     RunService.RenderStepped:Connect(function()
-        -- Logic for the RenderStepped-based Auto Catch
-        if variables.isAutoCatch then -- Use new variable
+        if variables.isAutoCatch then
             if variables.reelingMethod == "Safe Reeling Perfect" then
-                pcall(syncPositions) -- Wrap in pcall
+                pcall(syncPositions)
             elseif variables.reelingMethod == "Instant Perfect" then
-                pcall(startCatching, true) -- Wrap in pcall (passing true for perfect)
+                pcall(startCatching, true)
             end
         end
     end)
