@@ -16,19 +16,6 @@ local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 
 local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
 
--- Helper Library (Minimal version for Notify, replace if you have a full StellarLibrary)
-local StellarLibrary = {
-    Notify = function(opts)
-        WindUI:Notify({
-            Title = opts.Title or "Notification",
-            Content = opts.Content or "",
-            Icon = opts.Icon or "info",
-            Duration = opts.Duration or 5,
-        })
-    end
-}
-
-
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
     Icon = "door-open",
@@ -109,7 +96,7 @@ local variables = {
     isFishing = false           -- For the re-equip toggle
 }
 
--- ===== NEW FUNCTIONS =====
+-- ===== FUNCTIONS =====
 local function click_this_gui(to_click)
     if to_click and to_click:IsA("GuiObject") and to_click.Visible then
         pcall(function()
@@ -178,7 +165,13 @@ local function equipRod()
         end
     end
     if not rodFound then
-        StellarLibrary:Notify({Title = "Equip Error", Content = "No rod found in backpack!", Duration = 3})
+        -- Use WindUI:Notify directly
+        WindUI:Notify({
+            Title = "Equip Error",
+            Content = "No rod found in backpack!",
+            Icon = "alert-triangle", -- Optional: Add an appropriate icon
+            Duration = 3
+        })
     end
     return rodFound
 end
@@ -195,7 +188,7 @@ local function autoCast()
                  pcall(function() eventsFolder.cast:FireServer(unpack(castArgs)) end)
             end
         else
-             -- If no rod equipped, try equipping one (optional, can be spammy)
+             -- Optional: If no rod equipped, try equipping one. Be mindful of potential spam.
              -- equipRod()
              -- task.wait(0.5) -- Wait a bit after trying to equip
         end
@@ -239,7 +232,7 @@ local function syncPositions()
     end
 end
 
--- ===== END NEW FUNCTIONS =====
+-- ===== END FUNCTIONS =====
 
 
 -- Add the Auto Click toggle to the MainTab
@@ -252,7 +245,7 @@ Tabs.MainTab:Toggle({
         if value then
             task.spawn(function()
                 while variables.isAutoClicking and task.wait(0.000000000000000000000000000000000001) do -- Use new variable
-                    autoClick() -- Use new function
+                    pcall(autoClick) -- Wrap in pcall for safety
                 end
                 print("Auto Click loop stopped.")
             end)
@@ -331,7 +324,7 @@ Tabs.MainTab:Toggle({
                     end
 
                     -- Use the new equipRod function
-                    equipRod()
+                    pcall(equipRod) -- Wrap in pcall
 
                     -- Added check to exit loop if toggle is turned off during the wait
                     if not variables.isFishing then break end
@@ -347,12 +340,15 @@ Tabs.MainTab:Toggle({
 PlayerGui.ChildAdded:Connect(function(child)
     if child.Name == "shakeui" and variables.isAutoClicking then -- Check correct variable
         task.spawn(function()
+            -- Wait for safezone with a timeout
             local safezone = child:WaitForChild("safezone", 5)
             if safezone then
+                -- Try finding the button immediately
                 local button = safezone:FindFirstChild("button")
                 if button then
                     centerButton(button) -- Call new center function immediately
                 end
+
                 -- Also connect to ChildAdded on safezone in case button appears later
                 local connection
                 connection = safezone.ChildAdded:Connect(function(newChild)
@@ -360,18 +356,15 @@ PlayerGui.ChildAdded:Connect(function(child)
                         centerButton(newChild) -- Use new function
                     end
                 end)
-                -- Disconnect watcher if auto clicking stops
+
+                -- Setup cleanup mechanism using Heartbeat
                 local checkConnection
                 if RunService:IsClient() then
                     checkConnection = RunService.Heartbeat:Connect(function()
-                        if not variables.isAutoClicking then
+                        -- Disconnect if auto clicking stops OR if safezone is gone
+                        if not variables.isAutoClicking or not safezone or not safezone.Parent then
                             if connection then connection:Disconnect(); connection = nil end
                             if checkConnection then checkConnection:Disconnect(); checkConnection = nil end
-                        end
-                        -- Also disconnect if safezone itself is destroyed
-                        if not safezone or not safezone.Parent then
-                             if connection then connection:Disconnect(); connection = nil end
-                             if checkConnection then checkConnection:Disconnect(); checkConnection = nil end
                         end
                     end)
                 end
@@ -386,9 +379,9 @@ if RunService:IsClient() then
         -- Logic for the RenderStepped-based Auto Catch
         if variables.isAutoCatch then -- Use new variable
             if variables.reelingMethod == "Safe Reeling Perfect" then
-                syncPositions() -- Use new function
+                pcall(syncPositions) -- Wrap in pcall
             elseif variables.reelingMethod == "Instant Perfect" then
-                startCatching(true) -- Use new function (passing true for perfect)
+                pcall(startCatching, true) -- Wrap in pcall (passing true for perfect)
             end
         end
     end)
