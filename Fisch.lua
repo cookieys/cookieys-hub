@@ -21,7 +21,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(500, 400),
+    Size = UDim2.fromOffset(500, 450), -- Increased height slightly for new elements
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -87,15 +87,16 @@ Tabs.HomeTab:Button({
     end
 })
 
--- Variables to store toggle states
+-- Variables to store toggle states and settings
 local variables = {
-    isAutoShaking = false, -- Renamed from isAutoClicking for clarity
+    isAutoShaking = false,
     isAutoCasting = false,
-    isAutoReeling = false,
-    isInstantReeling = false
+    isAutoReeling = false, -- Changed from isAutoCatch
+    isInstantReelingToggle = false, -- Renamed from isInstantReeling for clarity
+    reelingMethod = "Safe Reeling Perfect" -- Added reelingMethod
 }
 
--- Placeholder function for auto-clicking/shaking logic
+-- Placeholder function for auto-shaking logic
 local function autoShakeLogic()
     local shakeUI = PlayerGui:FindFirstChild("shakeui")
     if shakeUI then
@@ -118,6 +119,21 @@ local function centerButton(button)
          button.Position = UDim2.new(0.5, 0, 0.5, 0)
          --print("Centering button:", button.Name)
      end
+end
+
+-- Placeholder functions for reeling (replace with actual implementation)
+local function syncPositions()
+    --print("Executing Safe Reeling Perfect...")
+    -- Add your safe reeling logic here
+end
+
+local function startCatching(isInstant)
+    if isInstant then
+        --print("Executing Instant Perfect Reeling...")
+        -- Add your instant reeling logic here
+    else
+        -- Add non-instant catching logic if needed elsewhere
+    end
 end
 
 -- Add the Auto Shake toggle to the MainTab
@@ -166,40 +182,50 @@ Tabs.MainTab:Toggle({
     end
 })
 
--- Add Auto Reel toggle
+-- Add Auto Reel toggle (using the name from the snippet)
 Tabs.MainTab:Toggle({
     Title = "Auto Reel",
     Default = false,
     Callback = function(value)
-        variables.isAutoReeling = value
+        variables.isAutoReeling = value -- Controls the activation of reeling logic
         print("Auto Reel Toggled:", value)
-        -- Placeholder: Add logic for Auto Reel here
+    end
+})
+
+-- Add Reeling Method Dropdown
+Tabs.MainTab:Dropdown({
+    Title = "Reeling Method",
+    Values = {"Safe Reeling Perfect", "Instant Perfect"},
+    Multi = false,
+    Default = variables.reelingMethod, -- Use the variable default
+    Callback = function(value)
+        variables.reelingMethod = value
+        print("Reeling Method Set To:", value)
+    end
+})
+
+
+-- Add Instant Reel toggle (separate toggle, as the original snippet seemed to imply)
+-- Note: This might be redundant if "Instant Perfect" in the dropdown handles it.
+-- If you want the dropdown *only* to control the method, remove this toggle.
+-- If you want this toggle to *enable* the possibility of instant reeling chosen by the dropdown, keep it.
+-- Based on the RunService loop provided, the dropdown *alone* determines the method.
+-- Renaming the variable `isInstantReeling` to `isInstantReelingToggle` to avoid confusion.
+Tabs.MainTab:Toggle({
+    Title = "Instant Reel (Toggle)", -- Clarified title
+    Default = false,
+    Callback = function(value)
+        variables.isInstantReelingToggle = value
+        print("Instant Reel Toggle Toggled:", value)
+        -- Placeholder: Maybe enable/disable hooks or modifications needed for instant reeling
         if value then
-             -- Start auto reeling loop/logic
-            print("Auto Reeling Started")
+             print("Instant Reel Toggle Enabled - Modifications Active")
         else
-            -- Stop auto reeling loop/logic
-            print("Auto Reeling Stopped")
+            print("Instant Reel Toggle Disabled - Modifications Inactive")
         end
     end
 })
 
--- Add Instant Reel toggle
-Tabs.MainTab:Toggle({
-    Title = "Instant Reel",
-    Default = false,
-    Callback = function(value)
-        variables.isInstantReeling = value
-        print("Instant Reel Toggled:", value)
-        -- Placeholder: Add logic for Instant Reel here
-        -- This might involve modifying game functions/remotes when enabled
-        if value then
-             print("Instant Reel Enabled")
-        else
-            print("Instant Reel Disabled")
-        end
-    end
-})
 
 -- Connect the ChildAdded event (Primarily for Auto Shake button centering)
 PlayerGui.ChildAdded:Connect(function(child)
@@ -222,14 +248,35 @@ PlayerGui.ChildAdded:Connect(function(child)
                     end
                 end)
                 -- Also disconnect if the main toggle is turned off later
-                local checkConnection = RunService.Heartbeat:Connect(function()
-                    if not variables.isAutoShaking and connection then
-                        connection:Disconnect()
-                        connection = nil
-                        checkConnection:Disconnect() -- Stop checking
-                    end
-                end)
+                local checkConnection
+                if RunService:IsClient() then -- Ensure RunService connections are only on client
+                    checkConnection = RunService.Heartbeat:Connect(function()
+                        if not variables.isAutoShaking and connection then
+                            connection:Disconnect()
+                            connection = nil
+                            if checkConnection then checkConnection:Disconnect() end -- Stop checking
+                        end
+                    end)
+                end
             end
         end)
     end
 end)
+
+-- RenderStepped loop for Auto Reeling based on the toggle and dropdown
+if RunService:IsClient() then
+    RunService.RenderStepped:Connect(function()
+        if variables.isAutoReeling then -- Check if Auto Reel toggle is ON
+            if variables.reelingMethod == "Safe Reeling Perfect" then
+                pcall(syncPositions)
+            elseif variables.reelingMethod == "Instant Perfect" then
+                 -- Optionally, you could also check variables.isInstantReelingToggle here
+                 -- if you want the separate toggle to act as an additional requirement.
+                 -- Example: if variables.reelingMethod == "Instant Perfect" and variables.isInstantReelingToggle then
+                pcall(startCatching, true) -- Pass true for instant
+            end
+        end
+
+        -- Add other RenderStepped logic here if needed (e.g., for Auto Cast if it requires per-frame checks)
+    end)
+end
