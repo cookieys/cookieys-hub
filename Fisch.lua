@@ -21,7 +21,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(300, 300), -- Slightly reduced height after removing a toggle
+    Size = UDim2.fromOffset(300, 300), -- Slightly reduced
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -35,7 +35,7 @@ local Window = WindUI:CreateWindow({
 })
 
 Window:EditOpenButton({
-    Title = "Open Example UI",
+    Title = "Open UI",
     Icon = "monitor",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
