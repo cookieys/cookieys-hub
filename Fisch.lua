@@ -1,4 +1,4 @@
--- Services
+-- ===== SERVICES =====
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -7,7 +7,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 
--- Player Setup
+-- ===== PLAYER SETUP =====
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local Backpack = LocalPlayer:WaitForChild("Backpack")
