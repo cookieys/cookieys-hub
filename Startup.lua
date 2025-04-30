@@ -1,3 +1,9 @@
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+task.wait(2)
+
 local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
 
 local Window = WindUI:CreateWindow({
