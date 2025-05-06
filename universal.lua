@@ -2,30 +2,52 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(2)
+task.wait(2) -- Allow game to settle
 
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+-- Services
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local VirtualUser = game:GetService("VirtualUser")
+local Workspace = game:GetService("Workspace")
 
 -- Player related variables
-local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer then -- Fallback if script runs before LocalPlayer is set
+    LocalPlayer = Players.PlayerAdded:Wait()
+end
+
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 
--- Detect and Store Default Values
-local DEFAULT_WALKSPEED = Humanoid and Humanoid.WalkSpeed or 16
-local DEFAULT_JUMPPOWER = Humanoid and Humanoid.JumpPower or 50
-local DEFAULT_FOV = 70
+-- Load UI Library
+local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
 
-print("Detected Default WalkSpeed:", DEFAULT_WALKSPEED)
-print("Detected Default JumpPower:", DEFAULT_JUMPPOWER)
+-- Store Default Values (fetch once, ensure Humanoid and Camera are valid)
+local DEFAULT_WALKSPEED = 16
+local DEFAULT_JUMPPOWER = 50
+local DEFAULT_FOV = 70 -- Roblox default FOV
 
+if Humanoid and Humanoid.Parent then -- Check Humanoid is still valid
+    DEFAULT_WALKSPEED = Humanoid.WalkSpeed
+    DEFAULT_JUMPPOWER = Humanoid.JumpPower
+end
+if Workspace.CurrentCamera then
+    DEFAULT_FOV = Workspace.CurrentCamera.FieldOfView
+end
+
+-- UI Element References (will be assigned when elements are created)
+local AntiAFKToggleElement = nil
+local WalkSpeedSliderElement = nil
+local JumpPowerSliderElement = nil
+local FovSliderElement = nil
+
+-- Window Creation
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
-    Icon = "cookie", -- Changed Icon
+    Icon = "cookie",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(400, 350), -- Slightly wider window
+    Size = UDim2.fromOffset(400, 350),
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -51,91 +73,42 @@ Window:EditOpenButton({
 })
 
 -- Anti AFK Logic
-local VirtualUser = game:GetService("VirtualUser")
 local AntiAFKEnabled = false
 local AntiAFKConnection
 
 local function StartAntiAFK()
     if AntiAFKConnection then AntiAFKConnection:Disconnect() end
-    AntiAFKConnection = game:GetService("RunService").Stepped:Connect(function()
+    AntiAFKConnection = RunService.Stepped:Connect(function()
         if AntiAFKEnabled then
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton2(Vector2.new())
+            pcall(VirtualUser.Button2Click, VirtualUser) -- Simpler click
         end
     end)
-    LocalPlayer.Idled:Connect(function()
-        if AntiAFKEnabled then
-           VirtualUser:CaptureController()
-           VirtualUser:ClickButton2(Vector2.new())
-        end
-    end)
-    print("Anti AFK Started")
 end
 
 local function StopAntiAFK()
     if AntiAFKConnection then
         AntiAFKConnection:Disconnect()
         AntiAFKConnection = nil
-        print("Anti AFK Stopped")
     end
 end
 
 -- Function to safely set humanoid properties
 local function SetHumanoidProperty(propName, value)
-    local char = LocalPlayer.Character
-    if char then
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            pcall(function()
-                hum[propName] = value
-            end)
-        end
+    if Character and Character.Parent and Humanoid and Humanoid.Parent then
+        pcall(function()
+            Humanoid[propName] = value
+        end)
     end
 end
 
 -- Tabs Definition
 local Tabs = {
-    MainTab = Window:Tab({ Title = "Main", Icon = "star", Desc = "Core features and utilities." }), -- New Main Tab
     HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
+    MainTab = Window:Tab({ Title = "Main", Icon = "star", Desc = "Core features and utilities." }),
     SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings", Desc = "Adjust script settings." })
 }
 
-Window:SelectTab(1) -- Select Main tab by default
-
--- Main Tab Content
-Tabs.MainTab:Button({
-    Title = "Load Infinite Yield",
-    Desc = "Loads the Infinite Yield admin script.",
-    Callback = function()
-        WindUI:Notify({
-            Title = "Loading...",
-            Content = "Loading Infinite Yield. Please wait.",
-            Icon = "loader-circle",
-            Duration = 3,
-        })
-        task.spawn(function() -- Spawn in a new thread to prevent UI freeze
-            local success, err = pcall(function()
-                 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
-            end)
-            if not success then
-                WindUI:Notify({
-                    Title = "Error",
-                    Content = "Failed to load Infinite Yield: " .. tostring(err),
-                    Icon = "alert-triangle",
-                    Duration = 5,
-                })
-                warn("Infinite Yield load error:", err)
-            else
-                WindUI:Notify({
-                    Title = "Success",
-                    Content = "Infinite Yield loaded successfully.",
-                    Icon = "check-circle",
-                    Duration = 3,
-                })
-            end
-        end)
-    end
-})
+Window:SelectTab(1)
 
 -- Home Tab Content
 Tabs.HomeTab:Button({
@@ -172,8 +145,43 @@ Tabs.HomeTab:Button({
     end
 })
 
+-- Main Tab Content
+Tabs.MainTab:Button({
+    Title = "Load Infinite Yield",
+    Desc = "Loads the Infinite Yield admin script.",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Loading...",
+            Content = "Loading Infinite Yield. Please wait.",
+            Icon = "loader-circle",
+            Duration = 3,
+        })
+        task.spawn(function() -- Use task.spawn for non-yielding operations
+            local success, err = pcall(function()
+                 loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+            end)
+            if not success then
+                WindUI:Notify({
+                    Title = "Error",
+                    Content = "Failed to load Infinite Yield: " .. tostring(err),
+                    Icon = "alert-triangle",
+                    Duration = 5,
+                })
+                warn("Infinite Yield load error:", err)
+            else
+                WindUI:Notify({
+                    Title = "Success",
+                    Content = "Infinite Yield loaded successfully.",
+                    Icon = "check-circle",
+                    Duration = 3,
+                })
+            end
+        end)
+    end
+})
+
 -- Settings Tab Content
-Tabs.SettingsTab:Toggle({
+AntiAFKToggleElement = Tabs.SettingsTab:Toggle({
     Title = "Anti AFK",
     Desc = "Prevents the game from kicking you for inactivity.",
     Default = false,
@@ -187,7 +195,7 @@ Tabs.SettingsTab:Toggle({
     end
 })
 
-Tabs.SettingsTab:Slider({
+WalkSpeedSliderElement = Tabs.SettingsTab:Slider({
     Title = "Walk Speed",
     Desc = "Adjust your character's movement speed.",
     Value = {
@@ -200,7 +208,7 @@ Tabs.SettingsTab:Slider({
     end
 })
 
-Tabs.SettingsTab:Slider({
+JumpPowerSliderElement = Tabs.SettingsTab:Slider({
     Title = "Jump Power",
     Desc = "Adjust your character's jump height.",
     Value = {
@@ -213,7 +221,7 @@ Tabs.SettingsTab:Slider({
     end
 })
 
-Tabs.SettingsTab:Slider({
+FovSliderElement = Tabs.SettingsTab:Slider({
     Title = "FOV Changer",
     Desc = "Adjust your camera Field of View.",
     Value = {
@@ -222,58 +230,79 @@ Tabs.SettingsTab:Slider({
         Default = DEFAULT_FOV,
     },
     Callback = function(value)
-        if game.Workspace and game.Workspace.CurrentCamera then
-            game.Workspace.CurrentCamera.FieldOfView = value
+        if Workspace.CurrentCamera then
+            Workspace.CurrentCamera.FieldOfView = value
         end
     end
 })
 
--- Function to reset settings to default
-local function ResetSettings()
-    if AntiAFKEnabled then
+-- Function to reset settings to default and update UI
+local function ResetSettingsAndUI()
+    -- Set Anti-AFK toggle and stop functionality
+    if AntiAFKToggleElement and AntiAFKToggleElement.SetValue then
+        AntiAFKToggleElement:SetValue(false) -- This should trigger its callback
+    elseif AntiAFKEnabled then -- Fallback if SetValue isn't available or toggle element is nil
+        AntiAFKEnabled = false
         StopAntiAFK()
     end
+
+    -- Reset WalkSpeed
     SetHumanoidProperty("WalkSpeed", DEFAULT_WALKSPEED)
+    if WalkSpeedSliderElement and WalkSpeedSliderElement.SetValue then
+        WalkSpeedSliderElement:SetValue(DEFAULT_WALKSPEED)
+    end
+
+    -- Reset JumpPower
     SetHumanoidProperty("JumpPower", DEFAULT_JUMPPOWER)
-    if game.Workspace and game.Workspace.CurrentCamera then
-        game.Workspace.CurrentCamera.FieldOfView = DEFAULT_FOV
+    if JumpPowerSliderElement and JumpPowerSliderElement.SetValue then
+        JumpPowerSliderElement:SetValue(DEFAULT_JUMPPOWER)
+    end
+
+    -- Reset FOV
+    if Workspace.CurrentCamera then
+        Workspace.CurrentCamera.FieldOfView = DEFAULT_FOV
+        if FovSliderElement and FovSliderElement.SetValue then
+            FovSliderElement:SetValue(DEFAULT_FOV)
+        end
     end
 end
 
--- Handle window closing to reset settings
-local oldDestroy = Window.Destroy
-function Window:Destroy()
-    ResetSettings()
-    oldDestroy(Window)
-end
+-- Reset settings if script is destroyed unexpectedly or player leaves
+game:BindToClose(ResetSettingsAndUI)
+LocalPlayer.Destroying:Connect(ResetSettingsAndUI)
 
--- Reset settings if script is destroyed unexpectedly
-LocalPlayer.Destroying:Connect(ResetSettings)
-
--- Handle character respawn
+-- Handle character respawn to re-apply settings from UI elements
 LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Character = newCharacter
     Humanoid = newCharacter:WaitForChild("Humanoid")
 
-    local currentWalkSpeedSliderValue -- Need to get this from the UI element if possible
-    local currentJumpPowerSliderValue -- Need to get this from the UI element if possible
-    local currentFovSliderValue -- Need to get this from the UI element if possible
+    task.wait(0.1) -- Small delay for stability
 
-    task.wait(0.1) -- Small delay to ensure humanoid properties are stable
+    -- Re-apply settings from the current UI values if elements exist
+    if WalkSpeedSliderElement and WalkSpeedSliderElement.GetValue then
+        SetHumanoidProperty("WalkSpeed", WalkSpeedSliderElement:GetValue())
+    else
+        SetHumanoidProperty("WalkSpeed", DEFAULT_WALKSPEED) -- Fallback
+    end
 
-    -- Re-apply current settings from sliders (if they exist and values are stored/accessible)
-    -- If not accessible, they will retain the value set before death,
-    -- and the sliders will re-apply them next time they are moved.
-    -- For now, just ensure the humanoid ref is updated. The sliders' callbacks will handle applying values.
-    -- Example of re-applying (requires storing the value):
-    -- if currentWalkSpeedSliderValue then SetHumanoidProperty("WalkSpeed", currentWalkSpeedSliderValue) end
-    -- if currentJumpPowerSliderValue then SetHumanoidProperty("JumpPower", currentJumpPowerSliderValue) end
-    -- if currentFovSliderValue and game.Workspace.CurrentCamera then game.Workspace.CurrentCamera.FieldOfView = currentFovSliderValue end
+    if JumpPowerSliderElement and JumpPowerSliderElement.GetValue then
+        SetHumanoidProperty("JumpPower", JumpPowerSliderElement:GetValue())
+    else
+        SetHumanoidProperty("JumpPower", DEFAULT_JUMPPOWER) -- Fallback
+    end
 
-     -- Optionally re-detect defaults if needed, but usually not necessary unless game explicitly changes them.
-     -- DEFAULT_WALKSPEED = Humanoid.WalkSpeed
-     -- DEFAULT_JUMPPOWER = Humanoid.JumpPower
-
-     -- Reset sliders visually to current humanoid/camera values if they differ from the slider's internal value
-     -- (Requires access to slider:SetValue methods)
+    if Workspace.CurrentCamera then
+        if FovSliderElement and FovSliderElement.GetValue then
+             Workspace.CurrentCamera.FieldOfView = FovSliderElement:GetValue()
+        else
+             Workspace.CurrentCamera.FieldOfView = DEFAULT_FOV -- Fallback
+        end
+    end
+    -- Anti-AFK state is managed by its toggle and should persist as is
 end)
+
+-- Initial application of default FOV if camera exists and UI element is ready
+if Workspace.CurrentCamera and FovSliderElement and FovSliderElement.SetValue then
+    -- Ensure slider matches the actual default FOV at start
+    FovSliderElement:SetValue(Workspace.CurrentCamera.FieldOfView)
+end
