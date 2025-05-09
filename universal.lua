@@ -9,6 +9,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService") -- Added for potential future use, good practice
 
 -- Player related variables
 local LocalPlayer = Players.LocalPlayer
@@ -19,8 +20,8 @@ end
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 
--- Load UI Library
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
+-- Load UI Library (Updated URL from WindUI example)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -- Store Default Values (fetch once, ensure Humanoid and Camera are valid)
 local DEFAULT_WALKSPEED = 16
@@ -35,6 +36,12 @@ if Workspace.CurrentCamera then
     DEFAULT_FOV = Workspace.CurrentCamera.FieldOfView
 end
 
+-- Variables to store current settings, initialized to defaults
+local currentWalkSpeed = DEFAULT_WALKSPEED
+local currentJumpPower = DEFAULT_JUMPPOWER
+local currentFov = DEFAULT_FOV
+local AntiAFKEnabled = false -- This variable already tracks Anti-AFK state
+
 -- UI Element References (will be assigned when elements are created)
 local AntiAFKToggleElement = nil
 local WalkSpeedSliderElement = nil
@@ -44,7 +51,7 @@ local FovSliderElement = nil
 -- Window Creation
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
-    Icon = "cookie",
+    Icon = "cookie", -- Assuming "cookie" is a valid icon name in the new WindUI or you have it custom
     Author = "XyraV",
     Folder = "cookieys",
     Size = UDim2.fromOffset(400, 350),
@@ -54,7 +61,7 @@ local Window = WindUI:CreateWindow({
     HasOutline = false,
     KeySystem = {
         Key = { "1234", "5678" },
-        Note = "The Key is '1234' or '5678",
+        Note = "The Key is '1234' or '5678'", -- Minor text consistency with example
         URL = "https://github.com/Footagesus/WindUI",
         SaveKey = true,
     },
@@ -73,14 +80,15 @@ Window:EditOpenButton({
 })
 
 -- Anti AFK Logic
-local AntiAFKEnabled = false
 local AntiAFKConnection
 
 local function StartAntiAFK()
     if AntiAFKConnection then AntiAFKConnection:Disconnect() end
     AntiAFKConnection = RunService.Stepped:Connect(function()
-        if AntiAFKEnabled then
-            pcall(VirtualUser.Button2Click, VirtualUser) -- Simpler click
+        if AntiAFKEnabled and LocalPlayer and LocalPlayer.Character then -- Add checks
+            pcall(VirtualUser.Button2Down, VirtualUser, Enum.UserInputType.MouseButton2)
+            task.wait(0.1) -- Short delay between down and up
+            pcall(VirtualUser.Button2Up, VirtualUser, Enum.UserInputType.MouseButton2)
         end
     end)
 end
@@ -98,6 +106,16 @@ local function SetHumanoidProperty(propName, value)
         pcall(function()
             Humanoid[propName] = value
         end)
+    else -- Try to get current character if previous reference is invalid
+        local currentPlayer = Players.LocalPlayer
+        if currentPlayer and currentPlayer.Character then
+            local currentHumanoid = currentPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if currentHumanoid then
+                 pcall(function()
+                    currentHumanoid[propName] = value
+                end)
+            end
+        end
     end
 end
 
@@ -153,7 +171,7 @@ Tabs.MainTab:Button({
         WindUI:Notify({
             Title = "Loading...",
             Content = "Loading Infinite Yield. Please wait.",
-            Icon = "loader-circle",
+            Icon = "loader-circle", -- Assuming this is a valid icon
             Duration = 3,
         })
         task.spawn(function() -- Use task.spawn for non-yielding operations
@@ -172,7 +190,7 @@ Tabs.MainTab:Button({
                 WindUI:Notify({
                     Title = "Success",
                     Content = "Infinite Yield loaded successfully.",
-                    Icon = "check-circle",
+                    Icon = "check-circle", -- Assuming this is a valid icon
                     Duration = 3,
                 })
             end
@@ -184,7 +202,7 @@ Tabs.MainTab:Button({
 AntiAFKToggleElement = Tabs.SettingsTab:Toggle({
     Title = "Anti AFK",
     Desc = "Prevents the game from kicking you for inactivity.",
-    Default = false,
+    Value = AntiAFKEnabled, -- Changed from Default to Value, uses the state variable
     Callback = function(state)
         AntiAFKEnabled = state
         if AntiAFKEnabled then
@@ -205,6 +223,7 @@ WalkSpeedSliderElement = Tabs.SettingsTab:Slider({
     },
     Callback = function(value)
         SetHumanoidProperty("WalkSpeed", value)
+        currentWalkSpeed = value -- Update stored value
     end
 })
 
@@ -218,6 +237,7 @@ JumpPowerSliderElement = Tabs.SettingsTab:Slider({
     },
     Callback = function(value)
         SetHumanoidProperty("JumpPower", value)
+        currentJumpPower = value -- Update stored value
     end
 })
 
@@ -233,76 +253,86 @@ FovSliderElement = Tabs.SettingsTab:Slider({
         if Workspace.CurrentCamera then
             Workspace.CurrentCamera.FieldOfView = value
         end
+        currentFov = value -- Update stored value
     end
 })
 
 -- Function to reset settings to default and update UI
 local function ResetSettingsAndUI()
     -- Set Anti-AFK toggle and stop functionality
+    AntiAFKEnabled = false -- Directly update state variable
     if AntiAFKToggleElement and AntiAFKToggleElement.SetValue then
-        AntiAFKToggleElement:SetValue(false) -- This should trigger its callback
-    elseif AntiAFKEnabled then -- Fallback if SetValue isn't available or toggle element is nil
-        AntiAFKEnabled = false
-        StopAntiAFK()
+        AntiAFKToggleElement:SetValue(false) -- This should trigger its callback to update AntiAFKEnabled and stop functionality
+    else -- Fallback if SetValue isn't available or toggle element is nil
+        StopAntiAFK() -- Ensure it's stopped
     end
 
     -- Reset WalkSpeed
+    currentWalkSpeed = DEFAULT_WALKSPEED -- Update state variable
     SetHumanoidProperty("WalkSpeed", DEFAULT_WALKSPEED)
     if WalkSpeedSliderElement and WalkSpeedSliderElement.SetValue then
-        WalkSpeedSliderElement:SetValue(DEFAULT_WALKSPEED)
+        WalkSpeedSliderElement:SetValue(DEFAULT_WALKSPEED) -- Assumed to trigger callback
     end
 
     -- Reset JumpPower
+    currentJumpPower = DEFAULT_JUMPPOWER -- Update state variable
     SetHumanoidProperty("JumpPower", DEFAULT_JUMPPOWER)
     if JumpPowerSliderElement and JumpPowerSliderElement.SetValue then
-        JumpPowerSliderElement:SetValue(DEFAULT_JUMPPOWER)
+        JumpPowerSliderElement:SetValue(DEFAULT_JUMPPOWER) -- Assumed to trigger callback
     end
 
     -- Reset FOV
+    currentFov = DEFAULT_FOV -- Update state variable
     if Workspace.CurrentCamera then
         Workspace.CurrentCamera.FieldOfView = DEFAULT_FOV
         if FovSliderElement and FovSliderElement.SetValue then
-            FovSliderElement:SetValue(DEFAULT_FOV)
+            FovSliderElement:SetValue(DEFAULT_FOV) -- Assumed to trigger callback
         end
     end
 end
 
 -- Reset settings if script is destroyed unexpectedly or player leaves
 game:BindToClose(ResetSettingsAndUI)
-LocalPlayer.Destroying:Connect(ResetSettingsAndUI)
 
--- Handle character respawn to re-apply settings from UI elements
+-- Properly disconnect player-specific connections when player leaves
+local playerRemovingConnection
+playerRemovingConnection = LocalPlayer.Destroying:Connect(function()
+    ResetSettingsAndUI()
+    StopAntiAFK() -- Ensure AntiAFK is stopped
+    if playerRemovingConnection then playerRemovingConnection:Disconnect() end
+    -- Any other player-specific cleanup
+end)
+
+
+-- Handle character respawn to re-apply settings
 LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Character = newCharacter
     Humanoid = newCharacter:WaitForChild("Humanoid")
 
     task.wait(0.1) -- Small delay for stability
 
-    -- Re-apply settings from the current UI values if elements exist
-    if WalkSpeedSliderElement and WalkSpeedSliderElement.GetValue then
-        SetHumanoidProperty("WalkSpeed", WalkSpeedSliderElement:GetValue())
-    else
-        SetHumanoidProperty("WalkSpeed", DEFAULT_WALKSPEED) -- Fallback
-    end
-
-    if JumpPowerSliderElement and JumpPowerSliderElement.GetValue then
-        SetHumanoidProperty("JumpPower", JumpPowerSliderElement:GetValue())
-    else
-        SetHumanoidProperty("JumpPower", DEFAULT_JUMPPOWER) -- Fallback
-    end
+    -- Re-apply settings from the stored current values
+    SetHumanoidProperty("WalkSpeed", currentWalkSpeed)
+    SetHumanoidProperty("JumpPower", currentJumpPower)
 
     if Workspace.CurrentCamera then
-        if FovSliderElement and FovSliderElement.GetValue then
-             Workspace.CurrentCamera.FieldOfView = FovSliderElement:GetValue()
-        else
-             Workspace.CurrentCamera.FieldOfView = DEFAULT_FOV -- Fallback
-        end
+         Workspace.CurrentCamera.FieldOfView = currentFov
     end
-    -- Anti-AFK state is managed by its toggle and should persist as is
+    -- Anti-AFK state is managed by its toggle and AntiAFKEnabled,
+    -- if it was on, StartAntiAFK would have been called and connection exists
+    -- or if it was off, StopAntiAFK would have been called.
+    -- Re-calling StartAntiAFK if AntiAFKEnabled is true might be needed if connection is lost across respawns
+    if AntiAFKEnabled then
+        StartAntiAFK() -- Refresh Anti-AFK on new character if it was enabled
+    end
 end)
 
--- Initial application of default FOV if camera exists and UI element is ready
-if Workspace.CurrentCamera and FovSliderElement and FovSliderElement.SetValue then
-    -- Ensure slider matches the actual default FOV at start
-    FovSliderElement:SetValue(Workspace.CurrentCamera.FieldOfView)
-end
+-- Initial application of FOV:
+-- If the FovSliderElement is created and CurrentCamera exists,
+-- set the slider's value to the current camera's FOV.
+-- This also updates `currentFov` via the callback if SetValue triggers it.
+task.defer(function() -- Defer to ensure UI elements are fully initialized
+    if Workspace.CurrentCamera and FovSliderElement and FovSliderElement.SetValue then
+        FovSliderElement:SetValue(Workspace.CurrentCamera.FieldOfView)
+    end
+end)
