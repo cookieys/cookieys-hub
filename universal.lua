@@ -190,7 +190,7 @@ Tabs.MainTab:Button({
                 WindUI:Notify({
                     Title = "Success",
                     Content = "Infinite Yield loaded successfully.",
-                    Icon = "check-circle", -- Assuming this is a valid icon
+                    Icon = "check", -- Assuming this is a valid icon
                     Duration = 3,
                 })
             end
