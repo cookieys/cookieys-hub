@@ -91,14 +91,14 @@ local function attemptInfiniteMaxAmmo_PrisonLife()
         WindUI_PrisonLife:Notify({
             Title = "Max Ammo Applied",
             Content = string.format("Found %d 'MaxAmmo' keys. Modified %d. (Scan: %s s)", foundCount, modifiedCount, time_taken),
-            Icon = "check-circle",
+            Icon = "check",
             Duration = 5
         })
     elseif foundCount > 0 then
          WindUI_PrisonLife:Notify({
             Title = "Max Ammo Found (Partial)",
             Content = string.format("Found %d 'MaxAmmo' keys, modified %d. Some might not be numbers or writable. (Scan: %s s)", foundCount, modifiedCount, time_taken),
-            Icon = "alert-circle",
+            Icon = "circle-alert",
             Duration = 6
         })
     else
@@ -119,7 +119,7 @@ PrisonLifeTabs.MainTab:Button({
 
 WindUI_PrisonLife:Notify({
     Title = "Prison Life UI Loaded",
-    Content = "The Prison Life specific UI is ready.",
+    Content = "Script is ready.",
     Icon = "info",
     Duration = 3
 })
