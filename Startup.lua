@@ -60,7 +60,7 @@ Tabs.HomeTab:Button({
                 WindUI:Notify({
                     Title = "Error",
                     Content = "Failed to copy link: " .. tostring(err),
-                    Icon = "alert-triangle",
+                    Icon = "triangle-alert",
                     Duration = 5,
                 })
             end
@@ -68,7 +68,7 @@ Tabs.HomeTab:Button({
             WindUI:Notify({
                 Title = "Error",
                 Content = "Could not copy link (setclipboard unavailable).",
-                Icon = "alert-triangle",
+                Icon = "triangle-alert",
                 Duration = 5,
             })
             warn("setclipboard function not available in this environment.")
