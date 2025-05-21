@@ -20,7 +20,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys", -- Folder for saving configurations
-    Size = UDim2.fromOffset(50, 50), -- Adjusted size for more content
+    Size = UDim2.fromOffset(580, 550), -- Adjusted size for more content + fly speed slider
     Transparent = true,
     Theme = "Dark", -- Available themes: "Dark", "Light", "Nord", etc.
     SideBarWidth = 180,
@@ -104,7 +104,7 @@ local isFlying = false
 local flyConnection = nil
 local bodyGyro = nil
 local bodyVelocity = nil
-local flySpeed = 50 -- Default fly speed
+local flySpeed = 50 -- Default fly speed, will be controlled by slider
 
 local isNoclipping = false
 local noclipConnection = nil
@@ -137,6 +137,12 @@ local function getHumanoid()
     return char and char:FindFirstChildOfClass("Humanoid")
 end
 
+local function getHumanoidRootPart()
+    local char = getCharacter()
+    return char and char:FindFirstChild("HumanoidRootPart")
+end
+
+
 Tabs.PhantomTab:Slider({
     Title = "WalkSpeed",
     Value = { Min = 16, Max = 500, Default = 16 },
@@ -149,14 +155,22 @@ Tabs.PhantomTab:Slider({
 })
 
 Tabs.PhantomTab:Slider({
-    Title = "JumpPower",
-    Desc = "Note: JumpPower is legacy. Modern games use JumpHeight.",
-    Value = { Min = 0, Max = 500, Default = 50 },
+    Title = "JumpHeight",
+    Desc = "Controls how high the player jumps.",
+    Value = { Min = 0, Max = 200, Default = 7.2 }, -- Standard JumpHeight is 7.2
     Callback = function(value)
         local humanoid = getHumanoid()
         if humanoid then
-            humanoid.JumpPower = value
+            humanoid.JumpHeight = value
         end
+    end
+})
+
+Tabs.PhantomTab:Slider({
+    Title = "Fly Speed",
+    Value = { Min = 10, Max = 500, Default = 50 },
+    Callback = function(value)
+        flySpeed = value
     end
 })
 
@@ -165,9 +179,8 @@ Tabs.PhantomTab:Toggle({
     Value = isFlying,
     Callback = function(state)
         isFlying = state
-        local char = getCharacter()
         local humanoid = getHumanoid()
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hrp = getHumanoidRootPart()
 
         if isFlying and hrp and humanoid then
             if bodyGyro then bodyGyro:Destroy() end
@@ -177,44 +190,59 @@ Tabs.PhantomTab:Toggle({
             bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
             bodyGyro.P = 20000
             bodyGyro.D = 500 
-            bodyGyro.CFrame = hrp.CFrame
-
+            
             bodyVelocity = Instance.new("BodyVelocity", hrp)
             bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
             bodyVelocity.Velocity = Vector3.new(0, 0, 0)
             bodyVelocity.P = 1250
 
+            if flyConnection then flyConnection:Disconnect() end
             flyConnection = RunService.Heartbeat:Connect(function()
-                if not isFlying or not hrp or not hrp.Parent then
+                if not isFlying or not hrp or not hrp.Parent or not humanoid or not humanoid.Parent then
                     if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
                     if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
                     if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
-                    humanoid.PlatformStand = false
+                    if humanoid and humanoid.Parent then humanoid.PlatformStand = false end
                     return
                 end
                 
-                local cameraCF = workspace.CurrentCamera.CFrame
-                local moveVector = Vector3.new()
-                if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVector = moveVector + cameraCF.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVector = moveVector - cameraCF.LookVector end
-                if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVector = moveVector + cameraCF.RightVector:Cross(Vector3.yAxis) end -- Left (relative to look, projected on XZ)
-                if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVector = moveVector - cameraCF.RightVector:Cross(Vector3.yAxis) end -- Right
-                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVector = moveVector + Vector3.new(0,1,0) end
-                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.C) then moveVector = moveVector - Vector3.new(0,1,0) end
+                local camera = workspace.CurrentCamera
+                if not camera then return end
+
+                bodyGyro.CFrame = camera.CFrame -- Player model faces where camera is looking
+
+                local finalMoveVector = Vector3.new()
                 
-                bodyGyro.CFrame = cameraCF
-                if moveVector.Magnitude > 0 then
-                    bodyVelocity.Velocity = moveVector.Unit * flySpeed
+                -- Primary input from Humanoid.MoveDirection (for joystick/standard WASD)
+                -- Humanoid.MoveDirection gives X for strafe, Z for forward/back. Z is -1 for forward.
+                local playerMoveDirection = humanoid.MoveDirection 
+                if playerMoveDirection.Magnitude > 0.01 then
+                    finalMoveVector = finalMoveVector + (camera.CFrame.RightVector * playerMoveDirection.X) -- Strafe based on X component
+                    finalMoveVector = finalMoveVector + (camera.CFrame.LookVector * -playerMoveDirection.Z) -- Forward/Backward based on Z component
+                else 
+                    -- Fallback to direct keyboard checks if MoveDirection is zero (e.g., for some specific PC cases or if humanoid is not processing it)
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then finalMoveVector = finalMoveVector + camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then finalMoveVector = finalMoveVector - camera.CFrame.LookVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then finalMoveVector = finalMoveVector - camera.CFrame.RightVector end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then finalMoveVector = finalMoveVector + camera.CFrame.RightVector end
+                end
+                
+                -- Vertical movement (always from keys, assuming mobile has buttons for these)
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then finalMoveVector = finalMoveVector + Vector3.new(0,1,0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or UserInputService:IsKeyDown(Enum.KeyCode.C) then finalMoveVector = finalMoveVector - Vector3.new(0,1,0) end
+                
+                if finalMoveVector.Magnitude > 0 then
+                    bodyVelocity.Velocity = finalMoveVector.Unit * flySpeed
                 else
                     bodyVelocity.Velocity = Vector3.new(0,0,0)
                 end
-                humanoid.PlatformStand = true -- Helps prevent some physics interactions
+                humanoid.PlatformStand = true -- Helps prevent some physics interactions and standard humanoid behavior
             end)
         else
             if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
             if bodyGyro then bodyGyro:Destroy(); bodyGyro = nil end
             if bodyVelocity then bodyVelocity:Destroy(); bodyVelocity = nil end
-            if humanoid then humanoid.PlatformStand = false end
+            if humanoid and humanoid.Parent then humanoid.PlatformStand = false end
         end
     end
 })
@@ -229,11 +257,12 @@ Tabs.PhantomTab:Toggle({
 
         if isNoclipping then
             originalCollisions = {}
+            if noclipConnection then noclipConnection:Disconnect() end
             noclipConnection = RunService.Stepped:Connect(function()
                 if not isNoclipping or not char or not char.Parent then
                     if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
                     for part, canCollide in pairs(originalCollisions) do
-                        if part and part.Parent then part.CanCollide = canCollide end
+                        if part and part.Parent then pcall(function() part.CanCollide = canCollide end) end
                     end
                     originalCollisions = {}
                     return
@@ -243,14 +272,14 @@ Tabs.PhantomTab:Toggle({
                         if originalCollisions[part] == nil then
                             originalCollisions[part] = part.CanCollide
                         end
-                        part.CanCollide = false
+                        pcall(function() part.CanCollide = false end)
                     end
                 end
             end)
         else
             if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
             for part, canCollide in pairs(originalCollisions) do
-                if part and part.Parent then part.CanCollide = canCollide end
+                 if part and part.Parent then pcall(function() part.CanCollide = canCollide end) end
             end
             originalCollisions = {}
         end
@@ -291,16 +320,16 @@ Tabs.PhantomTab:Toggle({
     Callback = function(state)
         isAntiAfkActive = state
         if isAntiAfkActive then
-            if antiAfkConnection then antiAfkConnection:Disconnect() end -- Ensure no multiple connections
+            if antiAfkConnection then antiAfkConnection:Disconnect() end 
             antiAfkConnection = LocalPlayer.Idled:Connect(function()
-                if isAntiAfkActive then
-                    pcall(function() -- Wrap in pcall in case of issues with VirtualInputManager
+                if isAntiAfkActive and LocalPlayer and LocalPlayer.Parent then
+                    pcall(function() 
                         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
                         task.wait(0.1)
                         VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
                          WindUI:Notify({ Title = "Anti-AFK", Content = "Idle detected, sent keep-alive input.", Duration = 2, Icon = "zap" })
                     end)
-                else
+                elseif not isAntiAfkActive then -- Double check state inside event
                     if antiAfkConnection then antiAfkConnection:Disconnect(); antiAfkConnection = nil end
                 end
             end)
@@ -323,16 +352,17 @@ Tabs.PhantomTab:Toggle({
         clickTeleportActive = state
         local mouse = LocalPlayer:GetMouse()
         if clickTeleportActive then
-            if clickTpConnection then clickTpConnection:Disconnect() end -- Prevent multiple connections
+            if clickTpConnection then clickTpConnection:Disconnect() end 
             clickTpConnection = mouse.Button1Down:Connect(function()
-                if clickTeleportActive then
-                    local char = getCharacter()
-                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if clickTeleportActive and LocalPlayer and LocalPlayer.Parent then
+                    local hrp = getHumanoidRootPart()
                     if hrp then
-                        hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) -- Add offset to avoid getting stuck
+                        hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) 
                     else
-                        WindUI:Notify({ Title = "Click TP Error", Content = "Character or HumanoidRootPart not found.", Duration = 3, Icon="triangle-alert"})
+                        WindUI:Notify({ Title = "Click TP Error", Content = "Character or HumanoidRootPart not found.", Duration = 3, Icon="alert-triangle"})
                     end
+                elseif not clickTeleportActive then -- Double check state
+                     if clickTpConnection then clickTpConnection:Disconnect(); clickTpConnection = nil end
                 end
             end)
             WindUI:Notify({ Title = "Click TP Enabled", Content = "Click on the world to teleport.", Duration = 3, Icon = "mouse-pointer-click" })
@@ -397,14 +427,29 @@ Tabs.SettingsTab:Toggle({
     end
 })
 
--- Ensure features are disabled if window is closed or script is destroyed
-game:GetService("ScriptContext").Error:Connect(function() -- Or use a custom destroy function if WindUI provides one
-    if flyConnection then flyConnection:Disconnect() end
-    if noclipConnection then noclipConnection:Disconnect() end
-    if antiAfkConnection then antiAfkConnection:Disconnect() end
-    if clickTpConnection then clickTpConnection:Disconnect() end
-    -- Restore fullbright
-    if isFullbright then
+local function cleanupFeatures()
+    if flyConnection then flyConnection:Disconnect(); flyConnection = nil end
+    if noclipConnection then noclipConnection:Disconnect(); noclipConnection = nil end
+    if antiAfkConnection then antiAfkConnection:Disconnect(); antiAfkConnection = nil end
+    if clickTpConnection then clickTpConnection:Disconnect(); clickTpConnection = nil end
+
+    if isFlying then -- Restore fly state
+        local humanoid = getHumanoid()
+        if humanoid and humanoid.Parent then humanoid.PlatformStand = false end
+        if bodyGyro and bodyGyro.Parent then bodyGyro:Destroy() end; bodyGyro = nil
+        if bodyVelocity and bodyVelocity.Parent then bodyVelocity:Destroy() end; bodyVelocity = nil
+        isFlying = false -- Ensure state variable is reset
+    end
+
+    if isNoclipping then -- Restore noclip collisions
+        for part, canCollide in pairs(originalCollisions) do
+            if part and part.Parent then pcall(function() part.CanCollide = canCollide end) end
+        end
+        originalCollisions = {}
+        isNoclipping = false
+    end
+    
+    if isFullbright then -- Restore fullbright
         Lighting.Ambient = originalLighting.Ambient
         Lighting.Brightness = originalLighting.Brightness
         Lighting.GlobalShadows = originalLighting.GlobalShadows
@@ -413,18 +458,19 @@ game:GetService("ScriptContext").Error:Connect(function() -- Or use a custom des
         Lighting.FogEnd = originalLighting.FogEnd
         Lighting.FogStart = originalLighting.FogStart
         Lighting.ColorShift_Top = originalLighting.ColorShift_Top
+        isFullbright = false
     end
-    -- Restore noclip collisions
-    if isNoclipping then
-        for part, canCollide in pairs(originalCollisions) do
-            if part and part.Parent then part.CanCollide = canCollide end
-        end
-    end
-    -- Restore fly
-    if isFlying then
-        local humanoid = getHumanoid()
-        if humanoid then humanoid.PlatformStand = false end
-        if bodyGyro then bodyGyro:Destroy() end
-        if bodyVelocity then bodyVelocity:Destroy() end
-    end
-end)
+
+    if isAntiAfkActive then isAntiAfkActive = false end
+    if clickTeleportActive then clickTeleportActive = false end
+end
+
+-- Cleanup on script removal or error
+local currentScript = getfenv().script
+if currentScript then
+    currentScript.Destroying:Connect(cleanupFeatures)
+end
+-- Fallback for environments where Destroying might not fire as expected or script is nil
+-- game:GetService("ScriptContext").Error:Connect(cleanupFeatures) -- This might be too broad
+-- A manual cleanup button in the UI or relying on game rejoining is often more practical for exploits.
+-- For now, the Destroying event is the most direct approach.
