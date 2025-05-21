@@ -20,7 +20,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys", -- Folder for saving configurations
-    Size = UDim2.fromOffset(580, 520), -- Adjusted size for more content
+    Size = UDim2.fromOffset(50, 50), -- Adjusted size for more content
     Transparent = true,
     Theme = "Dark", -- Available themes: "Dark", "Light", "Nord", etc.
     SideBarWidth = 180,
@@ -331,7 +331,7 @@ Tabs.PhantomTab:Toggle({
                     if hrp then
                         hrp.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0)) -- Add offset to avoid getting stuck
                     else
-                        WindUI:Notify({ Title = "Click TP Error", Content = "Character or HumanoidRootPart not found.", Duration = 3, Icon="alert-triangle"})
+                        WindUI:Notify({ Title = "Click TP Error", Content = "Character or HumanoidRootPart not found.", Duration = 3, Icon="triangle-alert"})
                     end
                 end
             end)
