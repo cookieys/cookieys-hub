@@ -198,6 +198,41 @@ Tabs.MainTab:Button({
     end
 })
 
+Tabs.MainTab:Button({
+    Title = "Load Nameless Admin",
+    Desc = "Loads the Nameless Admin script.",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Loading...",
+            Content = "Loading Nameless Admin. Please wait.",
+            Icon = "loader-circle",
+            Duration = 3,
+        })
+        task.spawn(function()
+            local success, err = pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/Nameless-Admin/main/Source.lua"))()
+            end)
+            if not success then
+                WindUI:Notify({
+                    Title = "Error",
+                    Content = "Failed to load Nameless Admin: " .. tostring(err),
+                    Icon = "alert-triangle",
+                    Duration = 5,
+                })
+                warn("Nameless Admin load error:", err)
+            else
+                WindUI:Notify({
+                    Title = "Success",
+                    Content = "Nameless Admin loaded successfully.",
+                    Icon = "check",
+                    Duration = 3,
+                })
+            end
+        end)
+    end
+})
+
+
 -- Settings Tab Content
 AntiAFKToggleElement = Tabs.SettingsTab:Toggle({
     Title = "Anti AFK",
