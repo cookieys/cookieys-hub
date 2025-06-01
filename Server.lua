@@ -2,7 +2,7 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(2)
+task.wait(2) -- Initial delay, potentially for game/UI assets to fully settle
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
@@ -11,26 +11,26 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-local PlaceId = game.PlaceId
+local PlaceId = game.PlaceId -- Capture PlaceId at script start
+local actualGameMaxPlayers = Players.MaxPlayers -- Auto-detect game's max players
 
 -- Server Finder Variables
 local isSearchingServers = false
 local currentFoundJobId = nil
-local maxPlayersTarget = 5 -- Default value for max players in a server
+local maxPlayersTarget = 5 -- Default value for max players in a server (for finding "small" servers)
 local serverSearchCursor = "" -- For API pagination
 
--- UI Element References for Server Finder (will be assigned)
+-- UI Element References for Server Finder (will be assigned by WindUI)
 local serverFinderStatusLabel = nil
 local foundServerDisplay = nil
-local joinFoundServerButton = nil -- Kept for reference, but its action is always available
-local findServerButtonInstance = nil -- To potentially change its title if supported and desired
+local findServerButtonInstance = nil 
 
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
-    Icon = "door-open", -- Assuming 'door-open' is a valid icon like in the WindUI example
+    Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(350, 400), -- Slightly wider for more server info
+    Size = UDim2.fromOffset(350, 430), -- Slightly taller to accommodate new info
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -56,70 +56,86 @@ Window:EditOpenButton({
 })
 
 local Tabs = {
-    HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
-    ServerFinderTab = Window:Tab({ Title = "Server Finder", Icon = "search", Desc = "Find old/small servers."})
+    HomeTab = Window:Tab({ Title = "Home", Icon = "home", Desc = "Welcome! Find general information here." }),
+    ServerFinderTab = Window:Tab({ Title = "Server Finder", Icon = "search", Desc = "Find old or small public servers."})
 }
 
-Window:SelectTab(1) -- Select HomeTab by default
+Window:SelectTab(1)
 
--- Home Tab Content
 Tabs.HomeTab:Button({
     Title = "Discord Invite",
     Desc = "Click to copy the Discord server invite link.",
     Callback = function()
         local discordLink = "https://discord.gg/ee4veXxYFZ"
-        if setclipboard then
+        if typeof(setclipboard) == "function" then
             local success, err = pcall(setclipboard, discordLink)
             if success then
-                WindUI:Notify({
-                    Title = "Link Copied!",
-                    Content = "Discord invite link copied to clipboard.",
-                    Icon = "clipboard-check",
-                    Duration = 3,
-                })
+                WindUI:Notify({ Title = "Link Copied!", Content = "Discord invite link copied to clipboard.", Icon = "clipboard-check", Duration = 3 })
             else
-                WindUI:Notify({
-                    Title = "Error",
-                    Content = "Failed to copy link: " .. tostring(err),
-                    Icon = "alert-triangle",
-                    Duration = 5,
-                })
+                WindUI:Notify({ Title = "Copy Error", Content = "Failed to copy link: " .. tostring(err), Icon = "alert-triangle", Duration = 5 })
             end
         else
-            WindUI:Notify({
-                Title = "Error",
-                Content = "Could not copy link (setclipboard unavailable).",
-                Icon = "alert-triangle",
-                Duration = 5,
-            })
-            warn("setclipboard function not available in this environment.")
+            WindUI:Notify({ Title = "Clipboard Error", Content = "setclipboard function is not available.", Icon = "alert-triangle", Duration = 5 })
+            warn("setclipboard function not available.")
         end
     end
 })
 
 -- Server Finder Tab Content
-Tabs.ServerFinderTab:Paragraph({Title = "Server Search Criteria"})
+Tabs.ServerFinderTab:Paragraph({Title = "Server Search Settings"})
 
+local gameMaxPlayersDisplayValue = tostring(actualGameMaxPlayers)
+local gameInfoParagraphDesc = "This game's Max Players: "
+if actualGameMaxPlayers <= 0 then
+    gameMaxPlayersDisplayValue = "N/A (or Studio)"
+    gameInfoParagraphDesc = gameInfoParagraphDesc .. gameMaxPlayersDisplayValue .. "\n(Search target limit will be 200)"
+else
+    gameInfoParagraphDesc = gameInfoParagraphDesc .. gameMaxPlayersDisplayValue
+end
+Tabs.ServerFinderTab:Paragraph({
+    Title = "Current Game Info",
+    Desc = gameInfoParagraphDesc
+})
+
+local placeholderMaxForInput = actualGameMaxPlayers > 0 and actualGameMaxPlayers or 50 -- Fallback for placeholder text
 local maxPlayersInput = Tabs.ServerFinderTab:Input({
-    Title = "Max Players in Server",
-    Value = tostring(maxPlayersTarget),
-    PlaceholderText = "e.g., 5", -- Using PlaceholderText as per WindUI example
+    Title = "Target Max Players (for Search)",
+    Value = tostring(maxPlayersTarget), -- Default is 5
+    PlaceholderText = "e.g., 1-" .. placeholderMaxForInput,
     Callback = function(input)
         local num = tonumber(input)
-        if num and num > 0 then
+        -- Let 200 be a general practical upper limit for this tool's input,
+        -- as searching for servers with more players isn't the primary goal of "small server finder".
+        if num and num > 0 and num <= 200 then 
             maxPlayersTarget = num
+            WindUI:Notify({Title = "Setting Updated", Content = "Search target max players: " .. maxPlayersTarget, Icon = "settings-2", Duration = 3})
+            
+            if actualGameMaxPlayers > 0 and num > actualGameMaxPlayers then
+                 WindUI:Notify({
+                    Title = "Heads Up", 
+                    Content = "Search target (" .. num .. ") is higher than this game's max players (" .. actualGameMaxPlayers .. "). Actual search will be limited by the game's max.", 
+                    Icon = "info", 
+                    Duration = 5
+                })
+            end
         else
             if maxPlayersInput and typeof(maxPlayersInput.SetValue) == "function" then
-                 maxPlayersInput:SetValue(tostring(maxPlayersTarget))
+                 maxPlayersInput:SetValue(tostring(maxPlayersTarget)) -- Revert to last valid target
             end
-            WindUI:Notify({Title = "Invalid Input", Content = "Max players must be a positive number.", Icon = "alert-triangle", Duration = 3})
+            local reason = "Target must be a number > 0 and <= 200."
+            WindUI:Notify({
+                Title = "Invalid Input", 
+                Content = reason, 
+                Icon = "alert-triangle", 
+                Duration = 4
+            })
         end
     end
 })
 
 serverFinderStatusLabel = Tabs.ServerFinderTab:Paragraph({
     Title = "Status",
-    Desc = "Idle."
+    Desc = "Idle. Configure Target Max Players and click 'Find Server'."
 })
 
 foundServerDisplay = Tabs.ServerFinderTab:Paragraph({
@@ -127,32 +143,35 @@ foundServerDisplay = Tabs.ServerFinderTab:Paragraph({
     Desc = "N/A"
 })
 
-joinFoundServerButton = Tabs.ServerFinderTab:Button({
+Tabs.ServerFinderTab:Button({
     Title = "Join Found Server",
     Desc = "Teleports you to the server displayed above.",
     Callback = function()
         if currentFoundJobId then
-            WindUI:Notify({Title = "Teleporting", Content = "Attempting to join server: " .. currentFoundJobId, Icon = "loader-circle", Duration = 5})
+            WindUI:Notify({Title = "Teleporting...", Content = "Attempting to join server: " .. currentFoundJobId, Icon = "loader-2", Duration = 5})
             local success, err = pcall(TeleportService.TeleportToPlaceInstance, TeleportService, PlaceId, currentFoundJobId, LocalPlayer)
             if not success then
-                 WindUI:Notify({Title = "Teleport Failed", Content = tostring(err), Icon = "alert-triangle", Duration = 5})
+                 WindUI:Notify({Title = "Teleport Failed", Content = "Error: " .. tostring(err), Icon = "alert-circle", Duration = 5})
             end
         else
-            WindUI:Notify({Title = "No Server Found", Content = "No server has been found or selected to join.", Icon = "alert-triangle", Duration = 3})
+            WindUI:Notify({Title = "No Server Found", Content = "No server has been found or selected to join.", Icon = "info", Duration = 3})
         end
     end
 })
 
+local function updateButtonAndStatus(buttonTitle, statusDesc, isSearching)
+    isSearchingServers = isSearching
+    if findServerButtonInstance and typeof(findServerButtonInstance.SetTitle) == "function" then
+        findServerButtonInstance:SetTitle(buttonTitle)
+    end
+    if serverFinderStatusLabel and typeof(serverFinderStatusLabel.SetDesc) == "function" then
+        serverFinderStatusLabel:SetDesc(statusDesc)
+    end
+end
+
 local function stopSearch(statusMessageOverride)
-    isSearchingServers = false
-    if findServerButtonInstance and typeof(findServerButtonInstance.SetTitle) == "function" then -- Check if method exists
-        findServerButtonInstance:SetTitle("Find Server")
-    end
-    if statusMessageOverride then
-        serverFinderStatusLabel:SetDesc(statusMessageOverride)
-    else
-        serverFinderStatusLabel:SetDesc("Search stopped.")
-    end
+    local finalMessage = statusMessageOverride or "Search stopped by user or error."
+    updateButtonAndStatus("Find Server", finalMessage, false)
 end
 
 local function searchForServer()
@@ -162,96 +181,100 @@ local function searchForServer()
     end
 
     if PlaceId == 0 then
-        serverFinderStatusLabel:SetDesc("Error: Invalid PlaceId (0). Cannot search in Studio or local server.")
+        if serverFinderStatusLabel and typeof(serverFinderStatusLabel.SetDesc) == "function" then
+            serverFinderStatusLabel:SetDesc("Error: Invalid PlaceId (0). Cannot search in Studio or local server.")
+        end
         return
     end
 
-    isSearchingServers = true
     currentFoundJobId = nil
-    foundServerDisplay:SetDesc("N/A")
-    serverFinderStatusLabel:SetDesc("Searching...")
-    if findServerButtonInstance and typeof(findServerButtonInstance.SetTitle) == "function" then
-        findServerButtonInstance:SetTitle("Stop Search")
-    end
-
-    serverSearchCursor = "" -- Reset cursor for a new search
+    if foundServerDisplay and typeof(foundServerDisplay.SetDesc) == "function" then foundServerDisplay:SetDesc("N/A") end
+    updateButtonAndStatus("Stop Search", "Searching for servers...", true)
+    
+    serverSearchCursor = "" 
 
     task.spawn(function()
         local attempts = 0
-        local maxApiPages = 10 -- Limit number of API pages to fetch
+        local maxApiPages = 10 
 
         while isSearchingServers and attempts < maxApiPages do
             local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=10&cursor=%s", PlaceId, serverSearchCursor)
             
-            local decodedResponseData
-            local requestSuccess, result = pcall(WindUI.Creator.Request, { -- Using WindUI.Creator.Request as per example
-                Url = url,
-                Method = "GET"
-            })
+            local responseBody
+            local requestSuccess, requestResult = pcall(function() return WindUI.Creator.Request({Url = url, Method = "GET"}) end)
 
-            if requestSuccess and result and result.Body then
-                local decodeSuccess, decoded = pcall(HttpService.JSONDecode, HttpService, result.Body)
-                if decodeSuccess then
-                    decodedResponseData = decoded
-                else
-                    serverFinderStatusLabel:SetDesc("Error decoding server data: " .. tostring(decoded))
-                    print("Server API JSON Decode Error on Body:", result.Body)
-                    stopSearch()
-                    break
-                end
-            else
-                local err_msg = "API Error: "
-                if result and result.StatusMessage then err_msg = err_msg .. result.StatusMessage
-                elseif result and result.Body then err_msg = err_msg .. " Received non-JSON body."
-                elseif not requestSuccess then err_msg = err_msg .. " Request function pcall failed: " .. tostring(result)
-                else err_msg = err_msg .. " Unknown error or no response body." end
-                serverFinderStatusLabel:SetDesc(err_msg)
-                if result then print("Server API Raw Response/Error:", result) end
-                stopSearch()
-                break
+            if not requestSuccess or not requestResult or not requestResult.Body then
+                local errMsg = "API Request Failed: "
+                if not requestSuccess then errMsg = errMsg .. "pcall error (" .. tostring(requestResult) .. ")"
+                elseif not requestResult then errMsg = errMsg .. "No response object."
+                else errMsg = errMsg .. (requestResult.StatusMessage or "No response body/unknown error.") end
+                
+                stopSearch(errMsg)
+                print("Server API Request Error:", requestResult or "pcall failure")
+                return 
             end
+            responseBody = requestResult.Body
+
+            local decodedResponseData
+            local decodeSuccess, decodedResult = pcall(HttpService.JSONDecode, HttpService, responseBody)
+            
+            if not decodeSuccess then
+                stopSearch("Error decoding server data: " .. tostring(decodedResult))
+                print("Server API JSON Decode Error on Body:", responseBody, "Error:", decodedResult)
+                return 
+            end
+            decodedResponseData = decodedResult
 
             if decodedResponseData and decodedResponseData.data and #decodedResponseData.data > 0 then
                 for _, serverInfo in ipairs(decodedResponseData.data) do
                     if not isSearchingServers then break end 
 
-                    if serverInfo.playing < maxPlayersTarget and serverInfo.playing < serverInfo.maxPlayers then
-                        currentFoundJobId = serverInfo.id
-                        foundServerDisplay:SetDesc("Job ID: " .. serverInfo.id .. "\nPlayers: " .. serverInfo.playing .. "/" .. serverInfo.maxPlayers)
-                        serverFinderStatusLabel:SetDesc("Server found!")
-                        WindUI:Notify({Title = "Server Found!", Content = "Job ID: " .. serverInfo.id .. " (" .. serverInfo.playing .. " players)", Icon = "check-circle", Duration = 5})
-                        stopSearch("Server found!") 
-                        return
+                    if type(serverInfo) == "table" and serverInfo.playing ~= nil and serverInfo.maxPlayers ~= nil and serverInfo.id ~= nil then
+                        -- Core logic: server has fewer players than target AND fewer players than its own max capacity
+                        if serverInfo.playing < maxPlayersTarget and serverInfo.playing < serverInfo.maxPlayers then
+                            currentFoundJobId = serverInfo.id
+                            local serverDetails = string.format("Job ID: %s\nPlayers: %d/%d", serverInfo.id, serverInfo.playing, serverInfo.maxPlayers)
+                            
+                            if foundServerDisplay and typeof(foundServerDisplay.SetDesc) == "function" then foundServerDisplay:SetDesc(serverDetails) end
+                            WindUI:Notify({Title = "Server Found!", Content = serverDetails, Icon = "check-circle-2", Duration = 5})
+                            stopSearch("Server found!") 
+                            return 
+                        end
+                    else
+                        print("Warning: Received malformed serverInfo object:", serverInfo)
                     end
                 end
 
                 if decodedResponseData.nextPageCursor then
                     serverSearchCursor = decodedResponseData.nextPageCursor
-                    serverFinderStatusLabel:SetDesc("Fetching next page of servers...")
+                    if serverFinderStatusLabel and typeof(serverFinderStatusLabel.SetDesc) == "function" then serverFinderStatusLabel:SetDesc("Fetching next page (" .. (attempts + 1) .. "/" .. maxApiPages .. ")...") end
                 else
                     stopSearch("Reached end of server list. No suitable server found.")
-                    break
+                    break 
                 end
-            else
-                stopSearch("No servers found on this page or invalid data.")
-                break
+            else 
+                local reason = "No servers found on this page"
+                if decodedResponseData and decodedResponseData.errors and #decodedResponseData.errors > 0 then
+                    reason = "API Error: " .. (decodedResponseData.errors[1].message or "Unknown API error")
+                elseif not (decodedResponseData and decodedResponseData.data) then
+                    reason = "Invalid data structure from API"
+                end
+                stopSearch(reason .. ".")
+                break 
             end
+            
             attempts = attempts + 1
-            task.wait(1.5) -- Delay between API requests
+            if isSearchingServers then task.wait(1.2) end 
         end
 
-        if isSearchingServers then -- Loop finished (e.g. maxApiPages reached)
-            stopSearch("Search finished. No server found matching criteria after " .. attempts .. " pages.")
+        if isSearchingServers then 
+            stopSearch("Search completed. No server found matching criteria after checking " .. attempts .. " page(s).")
         end
     end)
 end
 
 findServerButtonInstance = Tabs.ServerFinderTab:Button({
     Title = "Find Server",
-    Desc = "Searches for a public server with fewer players than your Max Players setting.",
+    Desc = "Searches for a public server with fewer players than your Target Max Players setting.",
     Callback = searchForServer
 })
-
--- Initial state for labels if needed
-serverFinderStatusLabel:SetDesc("Idle. Configure Max Players and click 'Find Server'.")
-foundServerDisplay:SetDesc("No server found yet.")
