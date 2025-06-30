@@ -95,7 +95,7 @@ local Window = WindUI:CreateWindow({
     Icon = "cookie",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(580, 460),
+    Size = UDim2.fromOffset(300, 300),
     Transparent = true,
     Theme = "Dark",
 })
