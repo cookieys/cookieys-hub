@@ -133,16 +133,28 @@ Tabs.Home:Button({
 -- Main Tab Content
 local function LoadScript(url, name)
     task.spawn(function()
-        local code, err = pcall(game.HttpGet, game, url)
-        if not code or err then
-            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to download " .. name .. ".", Duration = 4 })
+        local success, response = pcall(function() return request({Url = url, Method = "GET"}) end)
+        if not success then
+            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Request function failed for " .. name .. ": " .. tostring(response), Duration = 5 })
         end
-        local success, err2 = pcall(loadstring(err))
-        if success then
-            WindUI:Notify({ Title = "Success", Icon = "check", Content = name .. " loaded successfully.", Duration = 4 })
-        else
-            WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to execute " .. name .. ": " .. tostring(err2), Duration = 5 })
+
+        if not response or not response.Success or response.StatusCode ~= 200 or not response.Body or response.Body == "" then
+            local reason = "Unknown network error."
+            if response then reason = "Status: " .. tostring(response.StatusCode) .. ". " .. tostring(response.StatusMessage) end
+            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to download " .. name .. ". " .. reason, Duration = 5 })
         end
+        
+        local scriptFunc, loadErr = loadstring(response.Body)
+        if not scriptFunc then
+            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to compile " .. name .. ": " .. tostring(loadErr), Duration = 5 })
+        end
+
+        local execSuccess, execErr = pcall(scriptFunc)
+        if not execSuccess then
+            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to execute " .. name .. ": " .. tostring(execErr), Duration = 5 })
+        end
+
+        WindUI:Notify({ Title = "Success", Icon = "check", Content = name .. " loaded successfully.", Duration = 4 })
     end)
 end
 Tabs.Main:Button({ Title = "Load Infinite Yield", Callback = function() LoadScript("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield") end })
@@ -156,23 +168,95 @@ State.Elements.FieldOfView = Tabs.Phantom:Slider({ Title = "FOV Changer", Value 
 State.Elements.MaxZoom = Tabs.Phantom:Toggle({ Title = "Infinite Max Zoom", Desc = "Allows zooming out indefinitely.", Value = State.Current.MaxZoomEnabled, Callback = Apply.MaxZoom })
 
 -- Settings Tab Content
+Tabs.Settings:Section({Title = "Appearance"})
 local themeValues = {}
 for name in pairs(WindUI:GetThemes()) do table.insert(themeValues, name) end
 State.Elements.Theme = Tabs.Settings:Dropdown({ Title = "Select Theme", Values = themeValues, Value = WindUI:GetCurrentTheme(), Callback = function(t) WindUI:SetTheme(t) end })
 State.Elements.Transparency = Tabs.Settings:Toggle({ Title = "Window Transparency", Value = Window.Transparent, Callback = function(s) Window:ToggleTransparency(s) end })
 
 -- Configuration Management
+Tabs.Settings:Section({Title = "Configuration"})
 if Window.ConfigManager then
-    local myConfig = Window.ConfigManager:CreateConfig("DefaultSettings")
-    myConfig:Register("AntiAFK", State.Elements.AntiAFK)
-    myConfig:Register("WalkSpeed", State.Elements.WalkSpeed)
-    myConfig:Register("JumpPower", State.Elements.JumpPower)
-    myConfig:Register("FieldOfView", State.Elements.FieldOfView)
-    myConfig:Register("MaxZoom", State.Elements.MaxZoom)
-    myConfig:Register("Theme", State.Elements.Theme)
-    myConfig:Register("Transparency", State.Elements.Transparency)
-    Tabs.Settings:Button({ Title = "Save Config", Callback = function() myConfig:Save(); WindUI:Notify({ Title = "Saved", Content = "Configuration has been saved." }) end })
-    Tabs.Settings:Button({ Title = "Load Config", Callback = function() myConfig:Load(); WindUI:Notify({ Title = "Loaded", Content = "Configuration has been loaded." }) end })
+    local configFileName = "MySettings"
+    local selectedConfigToLoad = nil
+    
+    local function registerElements(config)
+        config:Register("AntiAFK", State.Elements.AntiAFK)
+        config:Register("WalkSpeed", State.Elements.WalkSpeed)
+        config:Register("JumpPower", State.Elements.JumpPower)
+        config:Register("FieldOfView", State.Elements.FieldOfView)
+        config:Register("MaxZoom", State.Elements.MaxZoom)
+        config:Register("Theme", State.Elements.Theme)
+        config:Register("Transparency", State.Elements.Transparency)
+    end
+
+    local configFolder = "WindUI/" .. Window.Folder .. "/config"
+    makefolder(configFolder)
+
+    local function listConfigs()
+        local files = {}
+        if listfiles then
+            for _, file in ipairs(listfiles(configFolder)) do
+                local name = file:match("([^/]+)%.json$")
+                if name then table.insert(files, name) end
+            end
+        end
+        return files
+    end
+
+    Tabs.Settings:Input({
+        Title = "Config Name",
+        Value = configFileName,
+        Placeholder = "Enter config name...",
+        Callback = function(v) configFileName = v end
+    })
+
+    Tabs.Settings:Button({
+        Title = "Save Current Settings",
+        Callback = function()
+            if configFileName and configFileName:gsub("%s", "") ~= "" then
+                local config = Window.ConfigManager:CreateConfig(configFileName)
+                registerElements(config)
+                config:Save()
+                WindUI:Notify({ Title = "Saved", Content = "Configuration '" .. configFileName .. "' saved." })
+            else
+                WindUI:Notify({ Title = "Error", Content = "Please enter a valid config name.", Icon = "alert-triangle" })
+            end
+        end
+    })
+
+    Tabs.Settings:Divider()
+
+    local configDropdown = Tabs.Settings:Dropdown({
+        Title = "Select Config to Load",
+        Values = listConfigs(),
+        AllowNone = true,
+        Callback = function(v) selectedConfigToLoad = v end
+    })
+
+    Tabs.Settings:Button({
+        Title = "Load Selected Config",
+        Callback = function()
+            if selectedConfigToLoad then
+                local config = Window.ConfigManager:CreateConfig(selectedConfigToLoad)
+                registerElements(config)
+                config:Load()
+                WindUI:Notify({ Title = "Loaded", Content = "Configuration '" .. selectedConfigToLoad .. "' loaded." })
+            else
+                WindUI:Notify({ Title = "Error", Content = "Please select a config to load.", Icon = "alert-triangle" })
+            end
+        end
+    })
+
+    Tabs.Settings:Button({
+        Title = "Refresh Config List",
+        Callback = function()
+            if configDropdown and configDropdown.Refresh then
+                configDropdown:Refresh(listConfigs())
+                WindUI:Notify({Title = "Refreshed", Content = "Config list has been updated.", Icon = "refresh-cw"})
+            end
+        end
+    })
 end
 
 -- Event Handling
@@ -183,7 +267,6 @@ LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Apply.AllCurrentSettings()
 end)
 
--- This is the correct client-side way to handle cleanup when the player leaves.
 LocalPlayer.Destroying:Connect(ResetToDefaults)
 
 -- Initial application of settings
