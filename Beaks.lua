@@ -1,40 +1,43 @@
+-- Wait for the game to be fully loaded
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(2)
-
-
+-- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer 
+local LocalPlayer = Players.LocalPlayer
 
+-- Load latest WindUI
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
-
-
-local buyDartRemote = nil
-local remoteFound = pcall(function()
-    buyDartRemote = ReplicatedStorage:WaitForChild("Util", 10):WaitForChild("Net", 10):WaitForChild("RF/BuyDart", 10)
-end)
-
-if not remoteFound or not buyDartRemote then
-    warn("cookieys hub Error: Could not find 'RF/BuyDart' RemoteFunction after waiting. Inf Money will not work.")
-    
-     WindUI:Notify({
-        Title = "Error",
-        Content = "Inf Money remote not found. Feature disabled.",
-        Icon = "alert-triangle",
-        Duration = 7,
-     })
-    
+-- Helper function to safely find remotes
+local function findRemote(path)
+    local current = ReplicatedStorage
+    for _, name in ipairs(path) do
+        local success, child = pcall(function() return current:WaitForChild(name, 10) end)
+        if not success or not child then
+            return nil, "Could not find '" .. name .. "' in " .. current.Name
+        end
+        current = child
+    end
+    return current
 end
 
+-- Find the remote and handle errors
+local buyDartRemote, remoteError = findRemote({"Util", "Net", "RF/BuyDart"})
+if remoteError then
+    warn("cookieys hub Error: " .. remoteError .. ". The 'Inf Money' feature will be disabled.")
+    WindUI:Notify({
+        Title = "Remote Not Found",
+        Content = "The 'Inf Money' remote could not be found. The feature will be unavailable.",
+        Icon = "alert-triangle",
+        Duration = 8,
+    })
+end
 
-local invokeArgs = {"Steel", -1e150} 
-
-
+-- UI Setup
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
     Icon = "door-open",
@@ -44,145 +47,91 @@ local Window = WindUI:CreateWindow({
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
-    HasOutline = false,
     KeySystem = {
         Key = { "1234", "5678" },
-        Note = "The Key is '1234' or '5678",
+        Note = "Example Key System.\nThe Key is '1234' or '5678'",
         URL = "https://github.com/Footagesus/WindUI",
         SaveKey = true,
     },
 })
-
 
 Window:EditOpenButton({
     Title = "Open UI",
     Icon = "monitor",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
-    Color = ColorSequence.new(
-        Color3.fromHex("FF0F7B"),
-        Color3.fromHex("F89B29")
-    ),
+    Color = ColorSequence.new(Color3.fromHex("FF0F7B"), Color3.fromHex("F89B29")),
     Draggable = true,
 })
 
-
+-- Tabs
 local Tabs = {
-    HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
-    MainTab = Window:Tab({ Title = "Main", Icon = "bolt", Desc = "Core script functionalities." }) 
+    Home = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
+    Main = Window:Tab({ Title = "Main", Icon = "bolt", Desc = "Core script functionalities." })
 }
-
-
 Window:SelectTab(1)
 
-
-Tabs.HomeTab:Button({
+-- Home Tab Content
+Tabs.Home:Button({
     Title = "Discord Invite",
     Desc = "Click to copy the Discord server invite link.",
     Callback = function()
-        local discordLink = "https://discord.gg/ee4veXxYFZ"
         if setclipboard then
-            local success, err = pcall(setclipboard, discordLink)
-            if success then
-                WindUI:Notify({
-                    Title = "Link Copied!",
-                    Content = "Discord invite link copied to clipboard.",
-                    Icon = "clipboard-check",
-                    Duration = 3,
-                })
-            else
-                WindUI:Notify({
-                    Title = "Error",
-                    Content = "Failed to copy link: " .. tostring(err),
-                    Icon = "alert-triangle",
-                    Duration = 5,
-                })
-            end
+            setclipboard("https://discord.gg/ee4veXxYFZ")
+            WindUI:Notify({ Title = "Link Copied!", Content = "Discord invite link copied to clipboard.", Icon = "clipboard-check", Duration = 3 })
         else
-            WindUI:Notify({
-                Title = "Error",
-                Content = "Could not copy link (setclipboard unavailable).",
-                Icon = "alert-triangle",
-                Duration = 5,
-            })
-            warn("setclipboard function not available in this environment.")
+            WindUI:Notify({ Title = "Error", Content = "setclipboard is not available in this environment.", Icon = "alert-triangle", Duration = 5 })
         end
     end
 })
 
-
+-- Main Tab Content
 local infMoneyConnection = nil
-
-Tabs.MainTab:Toggle({
-    Title = "Inf Money", 
-    Desc = "Attempts to rapidly add money (Requires specific game).",
-    Default = false, 
-    Callback = function(Value)
-        
+local infMoneyToggleElement = Tabs.Main:Toggle({
+    Title = "Inf Money",
+    Desc = "Attempts to rapidly add money.",
+    Value = false,
+    Callback = function(is_enabled)
         if not buyDartRemote then
-             WindUI:Notify({
-                Title = "Error",
-                Content = "Inf Money remote not found. Cannot enable.",
-                Icon = "alert-triangle",
-                Duration = 5,
-             })
-            
-            
-            return 
+            WindUI:Notify({ Title = "Error", Content = "Inf Money remote is not available. Cannot enable.", Icon = "alert-triangle", Duration = 5 })
+            if infMoneyToggleElement and infMoneyToggleElement.SetValue then
+                infMoneyToggleElement:SetValue(false, true) -- Set value without firing callback
+            end
+            return
         end
 
-        if Value then
-            
-            if not infMoneyConnection then
-                WindUI:Notify({Title = "Inf Money", Content="Enabled", Duration=3})
-                infMoneyConnection = RunService.Heartbeat:Connect(function()
-                    
-                    if not buyDartRemote or not buyDartRemote.Parent then
-                        warn("BuyDart RemoteFunction lost mid-execution! Disabling Inf. Money.")
-                        if infMoneyConnection then
-                            infMoneyConnection:Disconnect()
-                            infMoneyConnection = nil
+        if is_enabled and not infMoneyConnection then
+            WindUI:Notify({ Title = "Inf Money", Content = "Enabled", Icon = "check", Duration = 3 })
+            infMoneyConnection = RunService.Heartbeat:Connect(function()
+                if not buyDartRemote or not buyDartRemote.Parent then
+                    if infMoneyConnection then
+                        infMoneyConnection:Disconnect()
+                        infMoneyConnection = nil
+                        WindUI:Notify({ Title = "Inf Money", Content = "Disabled (Remote Lost)", Icon = "alert-triangle", Duration = 4 })
+                        if infMoneyToggleElement and infMoneyToggleElement.SetValue then
+                            infMoneyToggleElement:SetValue(false, true)
                         end
-                         WindUI:Notify({Title="Inf Money", Content="Disabled (Remote Lost)", Icon="alert-triangle", Duration=4})
-                        
-                        return
                     end
-
-                    
-                    pcall(buyDartRemote.InvokeServer, buyDartRemote, unpack(invokeArgs))
-                    pcall(buyDartRemote.InvokeServer, buyDartRemote, unpack(invokeArgs))
-                    
-                end)
-            end
-        else
-            
-            if infMoneyConnection then
-                 WindUI:Notify({Title = "Inf Money", Content="Disabled", Duration=3})
-                infMoneyConnection:Disconnect()
-                infMoneyConnection = nil
-            end
+                    return
+                end
+                pcall(buyDartRemote.InvokeServer, buyDartRemote, "Steel", -1e150)
+                pcall(buyDartRemote.InvokeServer, buyDartRemote, "Steel", -1e150)
+            end)
+        elseif not is_enabled and infMoneyConnection then
+            WindUI:Notify({ Title = "Inf Money", Content = "Disabled", Icon = "x", Duration = 3 })
+            infMoneyConnection:Disconnect()
+            infMoneyConnection = nil
         end
     end
 })
 
-
-local function cleanupInfMoney()
+-- Cleanup
+local function cleanup()
     if infMoneyConnection then
         infMoneyConnection:Disconnect()
         infMoneyConnection = nil
-        print("Inf. Money connection cleaned up.")
+        print("Inf. Money connection cleaned up on exit.")
     end
 end
 
-
-if LocalPlayer then
-    LocalPlayer.Destroying:Connect(cleanupInfMoney)
-else
-    Players.PlayerAdded:Connect(function(player) 
-        if player == Players.LocalPlayer then
-             player.Destroying:Connect(cleanupInfMoney)
-        end
-    end)
-end
-
-
+LocalPlayer.Destroying:Connect(cleanup)
