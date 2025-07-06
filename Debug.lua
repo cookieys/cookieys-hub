@@ -11,7 +11,7 @@ local Window = WindUI:CreateWindow({
     Title = "Debug Hub",
     Author = "XyraV",
     Folder = "DebugUI",
-    Size = UDim2.fromOffset(600, 500),
+    Size = UDim2.fromOffset(300, 300),
     Theme = "Dark",
     SideBarWidth = 220,
 })
