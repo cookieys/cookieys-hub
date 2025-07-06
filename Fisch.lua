@@ -45,7 +45,7 @@ Window:EditOpenButton({
     Icon = "monitor",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
-    Color = ColorSequence.new(Color3.fromHex("FF0F7B"), Color3.fromHex("F89B29")),
+    Color = ColorSequence.new(Color3.fromHex("0077FF"), Color3.fromHex("00C4FF")),
     Draggable = true,
 })
 
