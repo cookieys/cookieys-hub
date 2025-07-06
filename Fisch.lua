@@ -52,7 +52,7 @@ Window:EditOpenButton({
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
     Main = Window:Tab({ Title = "Main", Icon = "fish", Desc = "Main features for the game." }),
-    Info = Window:Tab({ Title = "Info", Icon = "help-circle", Desc = "How the script's features work." })
+    Info = Window:Tab({ Title = "Info", Icon = "info", Desc = "How the script's features work." })
 }
 Window:SelectTab(1)
 
