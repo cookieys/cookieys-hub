@@ -25,10 +25,10 @@ local State = {
 -- ===== UI CREATION =====
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
-    Icon = "door-open",
+    Icon = "fish",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(300, 420), -- Increased height for more info
+    Size = UDim2.fromOffset(300, 300), -- Increased height for more info
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -42,7 +42,7 @@ local Window = WindUI:CreateWindow({
 
 Window:EditOpenButton({
     Title = "Open UI",
-    Icon = "monitor",
+    Icon = "anchor",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
     Color = ColorSequence.new(Color3.fromHex("0077FF"), Color3.fromHex("00C4FF")),
