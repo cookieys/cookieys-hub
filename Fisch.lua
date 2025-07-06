@@ -28,7 +28,7 @@ local Window = WindUI:CreateWindow({
     Icon = "door-open",
     Author = "XyraV",
     Folder = "cookieys",
-    Size = UDim2.fromOffset(300, 320),
+    Size = UDim2.fromOffset(300, 420), -- Increased height for more info
     Transparent = true,
     Theme = "Dark",
     SideBarWidth = 180,
@@ -51,14 +51,25 @@ Window:EditOpenButton({
 
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
-    Main = Window:Tab({ Title = "Main", Icon = "fish", Desc = "Main features for the game." })
+    Main = Window:Tab({ Title = "Main", Icon = "fish", Desc = "Main features for the game." }),
+    Info = Window:Tab({ Title = "Info", Icon = "help-circle", Desc = "How the script's features work." })
 }
 Window:SelectTab(1)
 
 -- ===== HOME TAB =====
-Tabs.Home:Button({
-    Title = "Discord Invite",
-    Desc = "Click to copy the Discord server invite link.",
+Tabs.Home:Paragraph({
+    Title = "Welcome to the Hub!",
+    Desc = "Select the 'Main' tab for the features.\nCheck the 'Info' tab for an explanation of how everything works."
+})
+
+-- ===== INFO TAB =====
+Tabs.Info:Paragraph({
+    Title = "Discord Server",
+    Desc = "Click the button below to copy our community Discord invite link.",
+    Image = "discord"
+})
+Tabs.Info:Button({
+    Title = "Copy Discord Invite",
     Callback = function()
         if not setclipboard then
             return WindUI:Notify({ Title = "Error", Content = "setclipboard is not available in this executor.", Icon = "alert-triangle", Duration = 5 })
@@ -67,6 +78,38 @@ Tabs.Home:Button({
         WindUI:Notify({ Title = "Link Copied!", Content = "Discord invite link copied to clipboard.", Icon = "clipboard-check", Duration = 3 })
     end
 })
+
+Tabs.Info:Divider()
+
+Tabs.Info:Paragraph({
+    Title = "How It Works",
+    Desc = "Here's a breakdown of what each feature does:"
+})
+Tabs.Info:Paragraph({
+    Title = "Auto Click (Shake)",
+    Desc = "Automates the 'shake' minigame by constantly clicking. It also forces the button to the center of the screen to guarantee perfect clicks.",
+    Color = "Blue"
+})
+Tabs.Info:Paragraph({
+    Title = "Auto Cast",
+    Desc = "Automatically casts your fishing rod every 1.5 seconds, so you don't have to.",
+    Color = "Green"
+})
+Tabs.Info:Paragraph({
+    Title = "Auto Catch & Methods",
+    Desc = "This toggle enables the catching logic defined by the dropdown menu below it."
+})
+Tabs.Info:Paragraph({
+    Title = " - Safe Reeling Perfect",
+    Desc = "This method keeps your reel bar perfectly aligned with the fish's position. It's safe and guarantees a 'Perfect' catch.",
+    Color = "Green"
+})
+Tabs.Info:Paragraph({
+    Title = " - Instant Perfect",
+    Desc = "This method is faster but potentially more risky. It tells the server you instantly finished the minigame perfectly.",
+    Color = "Red"
+})
+
 
 -- ===== CORE GAME FUNCTIONS =====
 local function click_gui_element(element)
