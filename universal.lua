@@ -1,272 +1,362 @@
+-- [[ 1. Environment & Safety Checks ]]
+if getgenv().CookieysHubLoaded then
+    warn("Cookieys Hub is already running!")
+    return
+end
+getgenv().CookieysHubLoaded = true
+
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
--- Services
+-- [[ 2. Services ]]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
--- Player and Character setup
-local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local Humanoid = Character:WaitForChild("Humanoid")
+-- [[ 3. Player Setup ]]
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- Load UI Library
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+-- [[ 4. UI Library Initialization ]]
+local Success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
 
--- State Management
+if not Success or not WindUI then
+    warn("Failed to load WindUI.")
+    return
+end
+
+-- [[ 5. State Management ]]
 local State = {
-    Defaults = {
-        WalkSpeed = Humanoid.WalkSpeed,
-        JumpPower = Humanoid.JumpPower,
-        FieldOfView = Workspace.CurrentCamera.FieldOfView,
-        MaxZoom = LocalPlayer.CameraMaxZoomDistance,
-        AntiAFKEnabled = false,
-        MaxZoomEnabled = false,
+    Connections = {},
+    Values = {
+        WalkSpeed = 16,
+        JumpPower = 50,
+        FOV = 70,
+        InfiniteZoom = false,
+        AntiAFK = false
     },
-    Current = {},
-    Elements = {},
-    AntiAFKConnection = nil
+    Elements = {} -- UI Element references
 }
-State.Current = table.clone(State.Defaults)
 
--- Core Functions to Apply Settings
-local Apply = {}
-function Apply.WalkSpeed(value)
-    State.Current.WalkSpeed = value
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = value
+-- [[ 6. Core Logic Functions ]]
+local function ApplySettings()
+    local Char = LocalPlayer.Character
+    local Hum = Char and Char:FindFirstChild("Humanoid")
+
+    if Hum then
+        -- Only apply if changed from default to avoid fighting other scripts
+        if State.Values.WalkSpeed ~= 16 then Hum.WalkSpeed = State.Values.WalkSpeed end
+        if State.Values.JumpPower ~= 50 then Hum.JumpPower = State.Values.JumpPower end
     end
-end
-function Apply.JumpPower(value)
-    State.Current.JumpPower = value
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-        LocalPlayer.Character.Humanoid.JumpPower = value
+    
+    if Camera then
+        Camera.FieldOfView = State.Values.FOV
     end
+
+    LocalPlayer.CameraMaxZoomDistance = State.Values.InfiniteZoom and 9e9 or 128
 end
-function Apply.FieldOfView(value)
-    State.Current.FieldOfView = value
-    if Workspace.CurrentCamera then
-        Workspace.CurrentCamera.FieldOfView = value
+
+local function ToggleAntiAFK(state)
+    State.Values.AntiAFK = state
+    if State.Connections.AntiAFK then
+        State.Connections.AntiAFK:Disconnect()
+        State.Connections.AntiAFK = nil
     end
-end
-function Apply.MaxZoom(enabled)
-    State.Current.MaxZoomEnabled = enabled
-    LocalPlayer.CameraMaxZoomDistance = enabled and 1e9 or State.Defaults.MaxZoom
-end
-function Apply.AntiAFK(enabled)
-    State.Current.AntiAFKEnabled = enabled
-    if enabled and not State.AntiAFKConnection then
-        State.AntiAFKConnection = RunService.Stepped:Connect(function()
-            pcall(function() VirtualUser:Button2Down(Vector2.new()) end)
+
+    if state then
+        State.Connections.AntiAFK = LocalPlayer.Idled:Connect(function()
+            VirtualUser:Button2Down(Vector2.new(0, 0))
             task.wait(0.1)
-            pcall(function() VirtualUser:Button2Up(Vector2.new()) end)
+            VirtualUser:Button2Up(Vector2.new(0, 0))
+            WindUI:Notify({
+                Title = "Anti-AFK",
+                Content = "Prevented Kick due to inactivity.",
+                Icon = "shield",
+                Duration = 2
+            })
         end)
-    elseif not enabled and State.AntiAFKConnection then
-        State.AntiAFKConnection:Disconnect()
-        State.AntiAFKConnection = nil
     end
 end
-function Apply.AllCurrentSettings()
-    Apply.WalkSpeed(State.Current.WalkSpeed)
-    Apply.JumpPower(State.Current.JumpPower)
-    Apply.FieldOfView(State.Current.FieldOfView)
-    Apply.MaxZoom(State.Current.MaxZoomEnabled)
-    Apply.AntiAFK(State.Current.AntiAFKEnabled)
-end
 
--- Reset Function
-local function ResetToDefaults()
-    State.Current = table.clone(State.Defaults)
-    Apply.AllCurrentSettings()
+-- Character Added Hook (Persist Settings)
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    local hum = newChar:WaitForChild("Humanoid", 10)
+    if hum then
+        -- Wait a tick for Roblox default scripts to run first
+        task.wait(0.1) 
+        ApplySettings()
+        
+        -- Loop to keep stats if game tries to reset them
+        task.spawn(function()
+            while newChar and newChar.Parent and hum.Health > 0 do
+                if State.Values.WalkSpeed ~= 16 and hum.WalkSpeed ~= State.Values.WalkSpeed then
+                    hum.WalkSpeed = State.Values.WalkSpeed
+                end
+                task.wait(1)
+            end
+        end)
+    end
+end)
 
-    if State.Elements.WalkSpeed and State.Elements.WalkSpeed.SetValue then State.Elements.WalkSpeed:SetValue(State.Defaults.WalkSpeed) end
-    if State.Elements.JumpPower and State.Elements.JumpPower.SetValue then State.Elements.JumpPower:SetValue(State.Defaults.JumpPower) end
-    if State.Elements.FieldOfView and State.Elements.FieldOfView.SetValue then State.Elements.FieldOfView:SetValue(State.Defaults.FieldOfView) end
-    if State.Elements.MaxZoom and State.Elements.MaxZoom.SetValue then State.Elements.MaxZoom:SetValue(State.Defaults.MaxZoomEnabled) end
-    if State.Elements.AntiAFK and State.Elements.AntiAFK.SetValue then State.Elements.AntiAFK:SetValue(State.Defaults.AntiAFKEnabled) end
-end
-
--- UI Setup
+-- [[ 7. UI Creation ]]
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
     Icon = "cookie",
     Author = "XyraV",
-    Folder = "cookieys",
-    Size = UDim2.fromOffset(300, 300),
+    Folder = "cookieys-config", -- Unique folder name
+    Size = UDim2.fromOffset(500, 380),
     Transparent = true,
     Theme = "Dark",
+    SideBarWidth = 170,
+    HasOutline = true
 })
+
 Window:EditOpenButton({
-    Title = "Open UI",
-    Icon = "monitor",
+    Title = "Open Hub",
+    Icon = "cookie",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
-    Color = ColorSequence.new(Color3.fromHex("FF0F7B"), Color3.fromHex("F89B29")),
+    Color = ColorSequence.new(
+        Color3.fromHex("FF0F7B"),
+        Color3.fromHex("F89B29")
+    ),
     Draggable = true,
 })
 
--- Tabs
+-- [[ 8. Tabs ]]
 local Tabs = {
     Home = Window:Tab({ Title = "Home", Icon = "house" }),
-    Main = Window:Tab({ Title = "Main", Icon = "star" }),
-    Phantom = Window:Tab({ Title = "Phantom", Icon = "ghost" }),
+    Scripts = Window:Tab({ Title = "Scripts", Icon = "scroll" }),
+    Local = Window:Tab({ Title = "Local Player", Icon = "user" }),
     Settings = Window:Tab({ Title = "Settings", Icon = "settings" })
 }
-Window:SelectTab(1)
 
--- Home Tab Content
+-- [[ 9. Tab Content ]]
+
+-- :: Home Tab ::
+Tabs.Home:Section({ Title = "Information" })
+Tabs.Home:Paragraph({
+    Title = "Welcome, " .. LocalPlayer.Name,
+    Desc = "This is the improved version of cookieys hub.\nCurrent Game ID: " .. game.PlaceId
+})
+
 Tabs.Home:Button({
-    Title = "Discord Invite",
-    Desc = "Click to copy the Discord server invite link.",
+    Title = "Copy Discord Invite",
+    Desc = "Join our community!",
+    Icon = "link",
     Callback = function()
         if setclipboard then
             setclipboard("https://discord.gg/ee4veXxYFZ")
-            WindUI:Notify({ Title = "Link Copied!", Icon = "clipboard-check", Content = "Discord invite link copied to clipboard.", Duration = 3 })
+            WindUI:Notify({ Title = "Success", Content = "Copied to clipboard!", Icon = "check" })
+        else
+            WindUI:Notify({ Title = "Error", Content = "Your executor doesn't support clipboard.", Icon = "alert-triangle" })
         end
     end
 })
 
--- Main Tab Content
-local function LoadScript(url, name)
+-- :: Scripts Tab ::
+local function RunExternalScript(url, name)
+    WindUI:Notify({ Title = "Loading...", Content = "Fetching " .. name, Duration = 2 })
     task.spawn(function()
-        local success, response = pcall(function() return request({Url = url, Method = "GET"}) end)
-        if not success then
-            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Request function failed for " .. name .. ": " .. tostring(response), Duration = 5 })
+        local success, body = pcall(function() return game:HttpGet(url) end)
+        if success and body then
+            local func, err = loadstring(body)
+            if func then
+                pcall(func)
+                WindUI:Notify({ Title = "Success", Content = name .. " Executed.", Icon = "check" })
+            else
+                WindUI:Notify({ Title = "Error", Content = "Syntax Error: " .. tostring(err), Icon = "alert-triangle" })
+            end
+        else
+            WindUI:Notify({ Title = "Error", Content = "Failed to download script.", Icon = "alert-triangle" })
         end
-
-        if not response or not response.Success or response.StatusCode ~= 200 or not response.Body or response.Body == "" then
-            local reason = "Unknown network error."
-            if response then reason = "Status: " .. tostring(response.StatusCode) .. ". " .. tostring(response.StatusMessage) end
-            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to download " .. name .. ". " .. reason, Duration = 5 })
-        end
-        
-        local scriptFunc, loadErr = loadstring(response.Body)
-        if not scriptFunc then
-            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to compile " .. name .. ": " .. tostring(loadErr), Duration = 5 })
-        end
-
-        local execSuccess, execErr = pcall(scriptFunc)
-        if not execSuccess then
-            return WindUI:Notify({ Title = "Error", Icon = "alert-triangle", Content = "Failed to execute " .. name .. ": " .. tostring(execErr), Duration = 5 })
-        end
-
-        WindUI:Notify({ Title = "Success", Icon = "check", Content = name .. " loaded successfully.", Duration = 4 })
     end)
 end
-Tabs.Main:Button({ Title = "Load Infinite Yield", Callback = function() LoadScript("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield") end })
-Tabs.Main:Button({ Title = "Load Nameless Admin", Callback = function() LoadScript("https://raw.githubusercontent.com/ltseverydayyou/Nameless-Admin/main/Source.lua", "Nameless Admin") end })
 
--- Phantom Tab Content
-State.Elements.AntiAFK = Tabs.Phantom:Toggle({ Title = "Anti AFK", Desc = "Prevents game kick for inactivity.", Value = State.Current.AntiAFKEnabled, Callback = Apply.AntiAFK })
-State.Elements.WalkSpeed = Tabs.Phantom:Slider({ Title = "Walk Speed", Value = { Min = 16, Max = 500, Default = State.Defaults.WalkSpeed }, Callback = Apply.WalkSpeed })
-State.Elements.JumpPower = Tabs.Phantom:Slider({ Title = "Jump Power", Value = { Min = 50, Max = 500, Default = State.Defaults.JumpPower }, Callback = Apply.JumpPower })
-State.Elements.FieldOfView = Tabs.Phantom:Slider({ Title = "FOV Changer", Value = { Min = 1, Max = 120, Default = State.Defaults.FieldOfView }, Callback = Apply.FieldOfView })
-State.Elements.MaxZoom = Tabs.Phantom:Toggle({ Title = "Infinite Max Zoom", Desc = "Allows zooming out indefinitely.", Value = State.Current.MaxZoomEnabled, Callback = Apply.MaxZoom })
+Tabs.Scripts:Button({
+    Title = "Infinite Yield",
+    Desc = "The best admin command script.",
+    Icon = "terminal",
+    Callback = function() RunExternalScript("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source", "Infinite Yield") end
+})
 
--- Settings Tab Content
-Tabs.Settings:Section({Title = "Appearance"})
-local themeValues = {}
-for name in pairs(WindUI:GetThemes()) do table.insert(themeValues, name) end
-State.Elements.Theme = Tabs.Settings:Dropdown({ Title = "Select Theme", Values = themeValues, Value = WindUI:GetCurrentTheme(), Callback = function(t) WindUI:SetTheme(t) end })
-State.Elements.Transparency = Tabs.Settings:Toggle({ Title = "Window Transparency", Value = Window.Transparent, Callback = function(s) Window:ToggleTransparency(s) end })
+Tabs.Scripts:Button({
+    Title = "Nameless Admin",
+    Desc = "Lightweight admin commands.",
+    Icon = "shield-check",
+    Callback = function() RunExternalScript("https://raw.githubusercontent.com/ltseverydayyou/Nameless-Admin/main/Source.lua", "Nameless Admin") end
+})
 
--- Configuration Management
-Tabs.Settings:Section({Title = "Configuration"})
-if Window.ConfigManager then
-    local configFileName = "MySettings"
-    local selectedConfigToLoad = nil
-    
-    local function registerElements(config)
-        config:Register("AntiAFK", State.Elements.AntiAFK)
-        config:Register("WalkSpeed", State.Elements.WalkSpeed)
-        config:Register("JumpPower", State.Elements.JumpPower)
-        config:Register("FieldOfView", State.Elements.FieldOfView)
-        config:Register("MaxZoom", State.Elements.MaxZoom)
-        config:Register("Theme", State.Elements.Theme)
-        config:Register("Transparency", State.Elements.Transparency)
+-- :: Local Player Tab ::
+State.Elements.WalkSpeed = Tabs.Local:Slider({
+    Title = "Walk Speed",
+    Icon = "footprints",
+    Step = 1,
+    Value = { Min = 16, Max = 300, Default = 16 },
+    Callback = function(v)
+        State.Values.WalkSpeed = v
+        ApplySettings()
     end
+})
 
-    local configFolder = "WindUI/" .. Window.Folder .. "/config"
-    makefolder(configFolder)
-
-    local function listConfigs()
-        local files = {}
-        if listfiles then
-            for _, file in ipairs(listfiles(configFolder)) do
-                local name = file:match("([^/]+)%.json$")
-                if name then table.insert(files, name) end
-            end
-        end
-        return files
+State.Elements.JumpPower = Tabs.Local:Slider({
+    Title = "Jump Power",
+    Icon = "arrow-up",
+    Step = 1,
+    Value = { Min = 50, Max = 300, Default = 50 },
+    Callback = function(v)
+        State.Values.JumpPower = v
+        ApplySettings()
     end
+})
 
-    Tabs.Settings:Input({
-        Title = "Config Name",
-        Value = configFileName,
-        Placeholder = "Enter config name...",
-        Callback = function(v) configFileName = v end
-    })
+State.Elements.FOV = Tabs.Local:Slider({
+    Title = "Field of View",
+    Icon = "eye",
+    Step = 1,
+    Value = { Min = 70, Max = 120, Default = 70 },
+    Callback = function(v)
+        State.Values.FOV = v
+        ApplySettings()
+    end
+})
 
-    Tabs.Settings:Button({
-        Title = "Save Current Settings",
-        Callback = function()
-            if configFileName and configFileName:gsub("%s", "") ~= "" then
-                local config = Window.ConfigManager:CreateConfig(configFileName)
-                registerElements(config)
-                config:Save()
-                WindUI:Notify({ Title = "Saved", Content = "Configuration '" .. configFileName .. "' saved." })
-            else
-                WindUI:Notify({ Title = "Error", Content = "Please enter a valid config name.", Icon = "alert-triangle" })
-            end
+Tabs.Local:Divider()
+
+State.Elements.InfiniteZoom = Tabs.Local:Toggle({
+    Title = "Infinite Zoom",
+    Desc = "Scroll out as far as you want.",
+    Callback = function(v)
+        State.Values.InfiniteZoom = v
+        ApplySettings()
+    end
+})
+
+State.Elements.AntiAFK = Tabs.Local:Toggle({
+    Title = "Anti-AFK",
+    Desc = "Prevents being kicked for idling.",
+    Callback = ToggleAntiAFK
+})
+
+
+-- :: Settings Tab (Config System) ::
+Tabs.Settings:Section({ Title = "Interface" })
+
+local Themes = {}
+for name, _ in pairs(WindUI:GetThemes()) do
+    table.insert(Themes, name)
+end
+table.sort(Themes)
+
+State.Elements.Theme = Tabs.Settings:Dropdown({
+    Title = "Theme",
+    Values = Themes,
+    Value = "Dark",
+    Callback = function(t) WindUI:SetTheme(t) end
+})
+
+State.Elements.Transparency = Tabs.Settings:Toggle({
+    Title = "Transparent Background",
+    Value = true,
+    Callback = function(v) Window:ToggleTransparency(v) end
+})
+
+Tabs.Settings:Divider()
+Tabs.Settings:Section({ Title = "Configuration" })
+
+-- Helper for File System
+local ConfigFolder = "WindUI/cookieys-config"
+if not isfolder("WindUI") then makefolder("WindUI") end
+if not isfolder(ConfigFolder) then makefolder(ConfigFolder) end
+
+local ConfigNameInput = "default"
+
+Tabs.Settings:Input({
+    Title = "Config Name",
+    Placeholder = "Type name here...",
+    Callback = function(txt) ConfigNameInput = txt end
+})
+
+local function GetConfigs()
+    local list = {}
+    if listfiles then
+        for _, path in ipairs(listfiles(ConfigFolder)) do
+            local name = path:match("([^/]+)%.json$") or path:match("([^/]+)$") -- Extract filename
+            if name then table.insert(list, name) end
         end
-    })
-
-    Tabs.Settings:Divider()
-
-    local configDropdown = Tabs.Settings:Dropdown({
-        Title = "Select Config to Load",
-        Values = listConfigs(),
-        AllowNone = true,
-        Callback = function(v) selectedConfigToLoad = v end
-    })
-
-    Tabs.Settings:Button({
-        Title = "Load Selected Config",
-        Callback = function()
-            if selectedConfigToLoad then
-                local config = Window.ConfigManager:CreateConfig(selectedConfigToLoad)
-                registerElements(config)
-                config:Load()
-                WindUI:Notify({ Title = "Loaded", Content = "Configuration '" .. selectedConfigToLoad .. "' loaded." })
-            else
-                WindUI:Notify({ Title = "Error", Content = "Please select a config to load.", Icon = "alert-triangle" })
-            end
-        end
-    })
-
-    Tabs.Settings:Button({
-        Title = "Refresh Config List",
-        Callback = function()
-            if configDropdown and configDropdown.Refresh then
-                configDropdown:Refresh(listConfigs())
-                WindUI:Notify({Title = "Refreshed", Content = "Config list has been updated.", Icon = "refresh-cw"})
-            end
-        end
-    })
+    end
+    return list
 end
 
--- Event Handling
-LocalPlayer.CharacterAdded:Connect(function(newCharacter)
-    Character = newCharacter
-    Humanoid = newCharacter:WaitForChild("Humanoid")
-    task.wait(0.2)
-    Apply.AllCurrentSettings()
+local ConfigDropdown = Tabs.Settings:Dropdown({
+    Title = "Load Config",
+    Values = GetConfigs(),
+    AllowNone = true,
+    Callback = function(val)
+        ConfigNameInput = val
+    end
+})
+
+Tabs.Settings:Button({
+    Title = "Save Config",
+    Icon = "save",
+    Callback = function()
+        if ConfigNameInput == "" then return end
+        
+        -- Register elements manually to ensure we only save what we want
+        local Config = Window.ConfigManager:CreateConfig(ConfigNameInput)
+        
+        -- Manually link state values to the config system if needed, 
+        -- but WindUI usually handles registered elements.
+        -- We re-register here just in case.
+        Config:Register("Theme", State.Elements.Theme)
+        Config:Register("Transparency", State.Elements.Transparency)
+        Config:Register("WS", State.Elements.WalkSpeed)
+        Config:Register("JP", State.Elements.JumpPower)
+        Config:Register("FOV", State.Elements.FOV)
+        Config:Register("InfZoom", State.Elements.InfiniteZoom)
+        Config:Register("AntiAFK", State.Elements.AntiAFK)
+
+        Config:Save()
+        
+        WindUI:Notify({ Title = "Saved", Content = "Config saved as " .. ConfigNameInput, Icon = "save" })
+        ConfigDropdown:Refresh(GetConfigs())
+    end
+})
+
+Tabs.Settings:Button({
+    Title = "Load Config",
+    Icon = "download",
+    Callback = function()
+        if ConfigNameInput == "" then return end
+        
+        local Config = Window.ConfigManager:CreateConfig(ConfigNameInput)
+        
+        Config:Register("Theme", State.Elements.Theme)
+        Config:Register("Transparency", State.Elements.Transparency)
+        Config:Register("WS", State.Elements.WalkSpeed)
+        Config:Register("JP", State.Elements.JumpPower)
+        Config:Register("FOV", State.Elements.FOV)
+        Config:Register("InfZoom", State.Elements.InfiniteZoom)
+        Config:Register("AntiAFK", State.Elements.AntiAFK)
+
+        Config:Load()
+        ApplySettings() -- Force re-apply after loading
+        
+        WindUI:Notify({ Title = "Loaded", Content = "Config loaded: " .. ConfigNameInput, Icon = "check" })
+    end
+})
+
+-- [[ 10. Initialization ]]
+Window:SelectTab(1)
+ApplySettings()
+
+-- Cleanup on script re-execution or close
+Window.OnClose:Connect(function()
+    getgenv().CookieysHubLoaded = nil
 end)
-
-LocalPlayer.Destroying:Connect(ResetToDefaults)
-
--- Initial application of settings
-Apply.AllCurrentSettings()
