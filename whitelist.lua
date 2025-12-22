@@ -2,53 +2,55 @@ if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-task.wait(2)
+-- // Services
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
-
--- Whitelist System
-local WhitelistedUserIDs = {
-    7698388491, -- Replace with actual UserID
-    8174329346, -- Replace with another actual UserID
-    -- Add more UserIDs here
+-- // Whitelist Configuration (Using Dictionary for O(1) lookup speed)
+local WhitelistedUsers = {
+    [7698388491] = true,
+    [8174329346] = true,
 }
 
-local LocalPlayer = game:GetService("Players").LocalPlayer
-local isWhitelisted = false
-for _, id in ipairs(WhitelistedUserIDs) do
-    if LocalPlayer.UserId == id then
-        isWhitelisted = true
-        break
-    end
+local LocalPlayer = Players.LocalPlayer
+
+-- // Load Library safely
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+end)
+
+if not success or not WindUI then
+    warn("Failed to load WindUI.")
+    return
 end
 
-if not isWhitelisted then
+-- // Whitelist Check
+if not WhitelistedUsers[LocalPlayer.UserId] then
     WindUI:Notify({
         Title = "Access Denied",
-        Content = "You are not whitelisted to use this UI.",
-        Icon = "lock",
+        Content = "User ID " .. LocalPlayer.UserId .. " is not authorized.",
+        Icon = "shield-alert",
         Duration = 10,
     })
-    return -- Stop script execution if not whitelisted
+    return
 end
 
--- If whitelisted, proceed to create the UI
+-- // Create Window
 local Window = WindUI:CreateWindow({
     Title = "cookieys hub",
-    Icon = "orbit",
+    Icon = "orbit", 
     Author = "XyraV",
-    Folder = "Astra V1",
-    Size = UDim2.fromOffset(300, 300),
+    Folder = "cookieys-config",
+    Size = UDim2.fromOffset(500, 350), -- Increased size for better visibility
     Transparent = true,
     Theme = "Dark",
-    SideBarWidth = 180,
-    HasOutline = false,
-    -- KeySystem removed
+    SideBarWidth = 170,
+    HasOutline = true,
 })
 
 Window:EditOpenButton({
-    Title = "Open UI",
-    Icon = "monitor",
+    Title = "Open Hub",
+    Icon = "cookie",
     CornerRadius = UDim.new(0, 10),
     StrokeThickness = 2,
     Color = ColorSequence.new(
@@ -58,42 +60,50 @@ Window:EditOpenButton({
     Draggable = true,
 })
 
+-- // Tabs
 local Tabs = {
-    HomeTab = Window:Tab({ Title = "Home", Icon = "house", Desc = "Welcome! Find general information here." }),
+    Home = Window:Tab({ Title = "Home", Icon = "house" }),
 }
 
 Window:SelectTab(1)
 
-Tabs.HomeTab:Button({
-    Title = "Discord Invite",
-    Desc = "Click to copy the Discord server invite link.",
+-- // Home Section
+local HomeSection = Tabs.Home:Section({ Title = "Information" })
+
+HomeSection:Paragraph({
+    Title = "Welcome, " .. LocalPlayer.DisplayName,
+    Desc = "You have successfully authenticated."
+})
+
+HomeSection:Button({
+    Title = "Join Discord Server",
+    Desc = "Copy the invite link to your clipboard.",
+    Icon = "link",
     Callback = function()
         local discordLink = "https://discord.gg/ee4veXxYFZ"
+        
         if setclipboard then
-            local success, err = pcall(setclipboard, discordLink)
-            if success then
-                WindUI:Notify({
-                    Title = "Link Copied!",
-                    Content = "Discord invite link copied to clipboard.",
-                    Icon = "clipboard-check",
-                    Duration = 3,
-                })
-            else
-                WindUI:Notify({
-                    Title = "Error",
-                    Content = "Failed to copy link: " .. tostring(err),
-                    Icon = "triangle-alert",
-                    Duration = 5,
-                })
-            end
+            setclipboard(discordLink)
+            WindUI:Notify({
+                Title = "Success",
+                Content = "Discord invite copied to clipboard!",
+                Icon = "check",
+                Duration = 3,
+            })
         else
             WindUI:Notify({
-                Title = "Error",
-                Content = "Could not copy link (setclipboard unavailable).",
+                Title = "Not Supported",
+                Content = "Your executor does not support setclipboard.",
                 Icon = "triangle-alert",
                 Duration = 5,
             })
-            warn("setclipboard function not available in this environment.")
         end
     end
+})
+
+WindUI:Notify({
+    Title = "Authenticated",
+    Content = "Welcome back, " .. LocalPlayer.Name,
+    Icon = "shield-check",
+    Duration = 5
 })
