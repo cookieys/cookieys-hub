@@ -1,41 +1,84 @@
-return {
-    -- Common Rarity
-    ["Worm"]             = { LureSpeed = 15, Luck = 25, GenerelLuck = 0, Rarity = "Common", Resilience = 0 },
-    ["Bagel"]            = { LureSpeed = 0, Luck = 25, GenerelLuck = 0, Rarity = "Common", Resilience = 15 },
-    ["Insect"]           = { LureSpeed = 5, Luck = 35, GenerelLuck = 0, Rarity = "Common", Resilience = 0 },
-    ["Flakes"]           = { LureSpeed = 10, Luck = 55, GenerelLuck = 0, Rarity = "Common", Resilience = -3 },
-    ["Garbage"]          = { LureSpeed = -5, Luck = 0, GenerelLuck = -250, Rarity = "Common", Resilience = 50 },
+--!strict
 
-    -- Uncommon Rarity
-    ["Shrimp"]           = { LureSpeed = 0, Luck = 45, GenerelLuck = 25, Rarity = "Uncommon", Resilience = -5 },
-    ["Maggot"]           = { LureSpeed = -10, Luck = 0, GenerelLuck = 35, Rarity = "Uncommon", Resilience = 0 },
-
-    -- Unusual Rarity
-    ["Magnet"]           = { LureSpeed = 0, Luck = 200, GenerelLuck = 0, Rarity = "Unusual", Resilience = 0 },
-    ["Peppermint Worm"]  = { LureSpeed = -5, Luck = 50, GenerelLuck = 30, Rarity = "Unusual", Resilience = 20 },
-    ["Squid"]            = { LureSpeed = -25, Luck = 55, GenerelLuck = 45, Rarity = "Unusual", Resilience = 0 },
-    ["Seaweed"]          = { LureSpeed = 20, Luck = 35, GenerelLuck = 0, Rarity = "Unusual", Resilience = 10 },
-    ["Coral"]            = { LureSpeed = 20, Luck = 0, GenerelLuck = 0, Rarity = "Unusual", Resilience = 20 },
-    ["Minnow"]           = { LureSpeed = 0, Luck = 65, GenerelLuck = 0, Rarity = "Unusual", Resilience = -10 },
-
-    -- Rare Rarity
-    ["Coal"]             = { LureSpeed = 0, Luck = 45, GenerelLuck = 0, Rarity = "Rare", Resilience = -10 },
-    ["Super Flakes"]     = { LureSpeed = 0, Luck = 0, GenerelLuck = 70, Rarity = "Rare", Resilience = -15 },
-    ["Rapid Catcher"]    = { LureSpeed = 35, Luck = 0, GenerelLuck = 0, Rarity = "Rare", Resilience = -15 },
-
-    -- Legendary Rarity
-    ["Fish Head"]        = { LureSpeed = 10, Luck = 150, GenerelLuck = 0, Rarity = "Legendary", Resilience = -10 },
-    ["Night Shrimp"]     = { LureSpeed = 15, Luck = 0, GenerelLuck = 90, Rarity = "Legendary", Resilience = 0 },
-    ["Instant Catcher"]  = { LureSpeed = 65, Luck = 0, GenerelLuck = -20, Rarity = "Legendary", Resilience = -15 },
-    ["Kraken Tentacle"]  = { LureSpeed = 35, Luck = 100, GenerelLuck = 35, Rarity = "Legendary", Resilience = 15 },
-    ["Holly Berry"]      = { LureSpeed = -5, Luck = 80, GenerelLuck = 30, Rarity = "Legendary", Resilience = 10 },
-    ["Deep Coral"]       = { LureSpeed = 0, Luck = -10, GenerelLuck = 0, Rarity = "Legendary", Resilience = 50 },
-    ["Weird Algae"]      = { LureSpeed = -35, Luck = 0, GenerelLuck = 200, Rarity = "Legendary", Resilience = 0 },
-    ["Truffle Worm"]     = { LureSpeed = -10, Luck = 300, GenerelLuck = 0, Rarity = "Legendary", Resilience = 0 },
-
-    -- Mythical Rarity
-    ["Chocolate Fish"]   = { LureSpeed = 20, Luck = 200, GenerelLuck = 150, Rarity = "Mythical", Resilience = 15, Mutation = "Chocolate" },
-    ["Hangman's Hook"]   = { ProgressSpeed = 45, LureSpeed = -5, Luck = 150, GenerelLuck = 35, Rarity = "Mythical", Resilience = 20 },
-    ["Shark Head"]       = { LureSpeed = -5, Luck = 225, GenerelLuck = 30, Rarity = "Mythical", Resilience = 10 },
-    ["Aurora Bait"]      = { LureSpeed = -5, Luck = 100, GenerelLuck = 30, Rarity = "Mythical", Resilience = 10 },
+-- 1. Define Types for Autocomplete (Optional, but recommended for Roblox)
+export type BaitStats = {
+    LureSpeed: number,
+    Luck: number,
+    GeneralLuck: number,
+    Rarity: string,
+    Resilience: number,
+    ProgressSpeed: number?,
+    Mutation: string?
 }
+
+-- 2. Define Rarities (Prevents typo bugs)
+local Rarity = {
+    Common = "Common",
+    Uncommon = "Uncommon",
+    Unusual = "Unusual",
+    Rare = "Rare",
+    Legendary = "Legendary",
+    Mythical = "Mythical"
+}
+
+-- 3. Define Default Values (Used if a stat is missing)
+local DefaultStats = {
+    LureSpeed = 0,
+    Luck = 0,
+    GeneralLuck = 0,
+    Resilience = 0,
+    ProgressSpeed = 0,
+    Mutation = nil
+}
+
+-- 4. The Data Table
+local BaitData = {
+    -- Common
+    ["Worm"]            = { LureSpeed =  15, Luck =  25, GeneralLuck =    0, Resilience =  0, Rarity = Rarity.Common },
+    ["Bagel"]           = { LureSpeed =   0, Luck =  25, GeneralLuck =    0, Resilience = 15, Rarity = Rarity.Common },
+    ["Insect"]          = { LureSpeed =   5, Luck =  35, GeneralLuck =    0, Resilience =  0, Rarity = Rarity.Common },
+    ["Flakes"]          = { LureSpeed =  10, Luck =  55, GeneralLuck =    0, Resilience = -3, Rarity = Rarity.Common },
+    ["Garbage"]         = { LureSpeed =  -5, Luck =   0, GeneralLuck = -250, Resilience = 50, Rarity = Rarity.Common },
+
+    -- Uncommon
+    ["Shrimp"]          = { LureSpeed =   0, Luck =  45, GeneralLuck =   25, Resilience = -5, Rarity = Rarity.Uncommon },
+    ["Maggot"]          = { LureSpeed = -10, Luck =   0, GeneralLuck =   35, Resilience =  0, Rarity = Rarity.Uncommon },
+
+    -- Unusual
+    ["Magnet"]          = { LureSpeed =   0, Luck = 200, GeneralLuck =    0, Resilience =  0, Rarity = Rarity.Unusual },
+    ["Peppermint Worm"] = { LureSpeed =  -5, Luck =  50, GeneralLuck =   30, Resilience = 20, Rarity = Rarity.Unusual },
+    ["Squid"]           = { LureSpeed = -25, Luck =  55, GeneralLuck =   45, Resilience =  0, Rarity = Rarity.Unusual },
+    ["Seaweed"]         = { LureSpeed =  20, Luck =  35, GeneralLuck =    0, Resilience = 10, Rarity = Rarity.Unusual },
+    ["Coral"]           = { LureSpeed =  20, Luck =   0, GeneralLuck =    0, Resilience = 20, Rarity = Rarity.Unusual },
+    ["Minnow"]          = { LureSpeed =   0, Luck =  65, GeneralLuck =    0, Resilience =-10, Rarity = Rarity.Unusual },
+
+    -- Rare
+    ["Coal"]            = { LureSpeed =   0, Luck =  45, GeneralLuck =    0, Resilience =-10, Rarity = Rarity.Rare },
+    ["Super Flakes"]    = { LureSpeed =   0, Luck =   0, GeneralLuck =   70, Resilience =-15, Rarity = Rarity.Rare },
+    ["Rapid Catcher"]   = { LureSpeed =  35, Luck =   0, GeneralLuck =    0, Resilience =-15, Rarity = Rarity.Rare },
+
+    -- Legendary
+    ["Fish Head"]       = { LureSpeed =  10, Luck = 150, GeneralLuck =    0, Resilience =-10, Rarity = Rarity.Legendary },
+    ["Night Shrimp"]    = { LureSpeed =  15, Luck =   0, GeneralLuck =   90, Resilience =  0, Rarity = Rarity.Legendary },
+    ["Instant Catcher"] = { LureSpeed =  65, Luck =   0, GeneralLuck =  -20, Resilience =-15, Rarity = Rarity.Legendary },
+    ["Kraken Tentacle"] = { LureSpeed =  35, Luck = 100, GeneralLuck =   35, Resilience = 15, Rarity = Rarity.Legendary },
+    ["Holly Berry"]     = { LureSpeed =  -5, Luck =  80, GeneralLuck =   30, Resilience = 10, Rarity = Rarity.Legendary },
+    ["Deep Coral"]      = { LureSpeed =   0, Luck = -10, GeneralLuck =    0, Resilience = 50, Rarity = Rarity.Legendary },
+    ["Weird Algae"]     = { LureSpeed = -35, Luck =   0, GeneralLuck =  200, Resilience =  0, Rarity = Rarity.Legendary },
+    ["Truffle Worm"]    = { LureSpeed = -10, Luck = 300, GeneralLuck =    0, Resilience =  0, Rarity = Rarity.Legendary },
+
+    -- Mythical
+    ["Chocolate Fish"]  = { LureSpeed =  20, Luck = 200, GeneralLuck =  150, Resilience = 15, Rarity = Rarity.Mythical, Mutation = "Chocolate" },
+    ["Hangman's Hook"]  = { LureSpeed =  -5, Luck = 150, GeneralLuck =   35, Resilience = 20, Rarity = Rarity.Mythical, ProgressSpeed = 45 },
+    ["Shark Head"]      = { LureSpeed =  -5, Luck = 225, GeneralLuck =   30, Resilience = 10, Rarity = Rarity.Mythical },
+    ["Aurora Bait"]     = { LureSpeed =  -5, Luck = 100, GeneralLuck =   30, Resilience = 10, Rarity = Rarity.Mythical },
+}
+
+-- 5. Apply Metatables
+-- This ensures that if you try to read a value that isn't there (like ProgressSpeed on a Worm),
+-- it returns 0 instead of nil, preventing script errors.
+for _, stats in pairs(BaitData) do
+    setmetatable(stats, { __index = DefaultStats })
+end
+
+return BaitData
