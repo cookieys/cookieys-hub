@@ -1,3 +1,5 @@
+if game.PlaceId ~= 142823291 then return end
+
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
